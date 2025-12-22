@@ -1,6 +1,7 @@
 import itertools
 import numpy as np
 from shapely.geometry import Point, LineString
+import random
 
 class DotBuildingBlocks2D(object):
 
@@ -13,12 +14,13 @@ class DotBuildingBlocks2D(object):
         self.vis_dist = 60.0
 
     def compute_distance(self, prev_config, next_config):
-        # TODO: HW3 2.1
-        pass
+        self.env.compute_distance(prev_config, next_config)
 
     def sample_random_config(self, goal_prob, goal):
-        # TODO: HW3 2.1
-        pass
+        if random.random() < goal_prob:
+            return goal
+        return (random.uniform(self.env.xlimit[0], self.env.xlimit[1]),
+                random.uniform(self.env.ylimit[0], self.env.ylimit[1]))
 
     def config_validity_checker(self, state):
         return self.env.config_validity_checker(state)

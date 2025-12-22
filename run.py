@@ -139,10 +139,10 @@ def run_3d():
 
 
 if __name__ == "__main__":
-    # run_dot_2d_astar()
+    run_dot_2d_astar()
     # run_dot_2d_rrt()
     # run_dot_2d_rrt_star()
     # run_2d_rrt_motion_planning()
     # run_2d_rrt_inspection_planning()
     # run_2d_rrt_star_motion_planning()
-    run_3d()
+    #run_3d()

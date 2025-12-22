@@ -21,22 +21,46 @@ class RRTMotionPlanner(object):
         '''
         Compute and return the plan. The function should return a numpy array containing the states in the configuration space.
         '''
-        # TODO: HW3 2.2.3
-        pass
+        while not self.tree.is_goal_exists():
+            rand_config = self.bb.sample_random_config(goal_prob=self.goal_prob, goal=self.goal)
+            self.extend(rand_config)
+
+        plan = []
+        current = self.tree.get_vertex_for_config(self.goal)
+        while current!=self.start:
+            plan.append(current)
+            current =self.tree.vertices[self.tree.edges[self.tree.get_idx_for_config(current.config)]]
+
+        return plan
+
 
     def compute_cost(self, plan):
         '''
         Compute and return the plan cost, which is the sum of the distances between steps in the configuration space.
         @param plan A given plan for the robot.
         '''
-        # TODO: HW3 2.2.2
-        pass
+        #maybe need to return just the cost of the goal vertex
+        return sum(vertex.cost for vertex in plan)
 
-    def extend(self, near_config, rand_config):
+
+    def extend(self, near_config: np.ndarray, rand_config: np.ndarray):
         '''
         Compute and return a new configuration for the sampled one.
         @param near_config The nearest configuration to the sampled configuration.
         @param rand_config The sampled configuration.
         '''
-        # TODO: HW3 2.2.1
-        pass
+        #E1
+        if self.ext_mode == "E1":
+            if not self.bb.env.config_validity_checker(rand_config) or not self.bb.env.edge_validity_checker(
+                    near_config, rand_config):
+                return
+            self.tree.add_vertex(rand_config)
+            self.tree.add_edge(near_config,rand_config, self.bb.compute_distance(near_config, rand_config))
+        else:
+            new_config = near_config + ((rand_config - near_config) / self.bb.compute_distance(rand_config, near_config))*0.5
+            if not self.bb.env.config_validity_checker(new_config) or not self.bb.env.edge_validity_checker(
+                    near_config, new_config):
+                return
+            self.tree.add_vertex(new_config)
+            self.tree.add_edge(near_config, new_config, self.bb.compute_distance(new_config, near_config))
+
