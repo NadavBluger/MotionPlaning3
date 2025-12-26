@@ -1,5 +1,8 @@
 import itertools
+import math
+
 import numpy as np
+import shapely
 from shapely.geometry import Point, LineString
 
 class BuildingBlocks2D(object):
@@ -22,8 +25,11 @@ class BuildingBlocks2D(object):
         @param prev_config Previous configuration.
         @param next_config Next configuration.
         '''
-        # TODO: HW2 4.2.1
-        pass
+        sq_sum = 0.0
+        for a, b in zip(prev_config, next_config):
+            diff = a - b
+            sq_sum += diff * diff
+        return math.sqrt(sq_sum)
 
     def compute_path_cost(self, path):
         totat_cost = 0
@@ -36,8 +42,15 @@ class BuildingBlocks2D(object):
         Compute the 2D position (x,y) of each one of the links (including end-effector) and return.
         @param given_config Given configuration.
         '''
-        # TODO: HW2 4.2.2
-        pass
+        positions = []
+        x, y = 0.0, 0.0
+        theta = 0.0
+        for i, link_len in enumerate(self.links):
+            theta += given_config[i]  # accumulate joint angles
+            x += link_len * math.cos(theta)
+            y += link_len * math.sin(theta)
+            positions.append([x, y])
+        return positions
 
     def compute_ee_angle(self, given_config):
         '''
@@ -68,8 +81,15 @@ class BuildingBlocks2D(object):
         Verify that the given set of links positions does not contain self collisions.
         @param robot_positions Given links positions.
         '''
-        # TODO: HW2 4.2.3
-        pass
+        edges = [shapely.LineString([robot_positions[i], robot_positions[i + 1]]) for i in
+                 range(len(robot_positions) - 1)]
+        for edge in edges:
+            for other_edge in edges:
+                if edge == other_edge:
+                    continue
+                if edge.crosses(other_edge):
+                    return False
+        return True
 
     def config_validity_checker(self, config):
         '''

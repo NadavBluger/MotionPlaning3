@@ -21,9 +21,10 @@ class RRTMotionPlanner(object):
         '''
         Compute and return the plan. The function should return a numpy array containing the states in the configuration space.
         '''
-        while not self.tree.is_goal_exists():
+        self.tree.add_vertex(self.start)
+        while not self.tree.is_goal_exists(self.goal):
             rand_config = self.bb.sample_random_config(goal_prob=self.goal_prob, goal=self.goal)
-            self.extend(rand_config)
+            self.extend(self.tree.get_nearest_config(rand_config)[1], rand_config)
 
         plan = []
         current = self.tree.get_vertex_for_config(self.goal)
@@ -54,13 +55,15 @@ class RRTMotionPlanner(object):
             if not self.bb.env.config_validity_checker(rand_config) or not self.bb.env.edge_validity_checker(
                     near_config, rand_config):
                 return
-            self.tree.add_vertex(rand_config)
-            self.tree.add_edge(near_config,rand_config, self.bb.compute_distance(near_config, rand_config))
+            eid = self.tree.add_vertex(rand_config)
+            sid = self.tree.get_idx_for_config(near_config)
+            self.tree.add_edge(sid, eid, self.bb.compute_distance(near_config, rand_config))
         else:
             new_config = near_config + ((rand_config - near_config) / self.bb.compute_distance(rand_config, near_config))*0.5
             if not self.bb.env.config_validity_checker(new_config) or not self.bb.env.edge_validity_checker(
                     near_config, new_config):
                 return
-            self.tree.add_vertex(new_config)
-            self.tree.add_edge(near_config, new_config, self.bb.compute_distance(new_config, near_config))
+            eid = self.tree.add_vertex(new_config)
+            sid = self.tree.get_idx_for_config(near_config)
+            self.tree.add_edge(sid, eid, self.bb.compute_distance(new_config, near_config))
 

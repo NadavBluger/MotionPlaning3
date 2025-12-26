@@ -14,7 +14,7 @@ class DotBuildingBlocks2D(object):
         self.vis_dist = 60.0
 
     def compute_distance(self, prev_config, next_config):
-        self.env.compute_distance(prev_config, next_config)
+        return self.env.compute_distance(prev_config, next_config)
 
     def sample_random_config(self, goal_prob, goal):
         if random.random() < goal_prob:
