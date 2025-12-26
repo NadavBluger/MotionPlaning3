@@ -19,8 +19,8 @@ class DotBuildingBlocks2D(object):
     def sample_random_config(self, goal_prob, goal):
         if random.random() < goal_prob:
             return goal
-        return (random.uniform(self.env.xlimit[0], self.env.xlimit[1]),
-                random.uniform(self.env.ylimit[0], self.env.ylimit[1]))
+        return np.array([random.uniform(self.env.xlimit[0], self.env.xlimit[1]),
+                random.uniform(self.env.ylimit[0], self.env.ylimit[1])])
 
     def config_validity_checker(self, state):
         return self.env.config_validity_checker(state)

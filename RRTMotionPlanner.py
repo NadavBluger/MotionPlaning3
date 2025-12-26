@@ -26,14 +26,13 @@ class RRTMotionPlanner(object):
             rand_config = self.bb.sample_random_config(goal_prob=self.goal_prob, goal=self.goal)
             self.extend(self.tree.get_nearest_config(rand_config)[1], rand_config)
 
-        plan = []
+        plan = np.empty((0, 2))
         current = self.tree.get_vertex_for_config(self.goal)
-        while current!=self.start:
-            plan.append(current)
+        while (current.config!=self.start).all():
+            plan=np.vstack((plan, current.config))
             current =self.tree.vertices[self.tree.edges[self.tree.get_idx_for_config(current.config)]]
-
+        plan=np.vstack((plan, self.start))
         return plan
-
 
     def compute_cost(self, plan):
         '''
