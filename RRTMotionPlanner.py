@@ -12,6 +12,7 @@ class RRTMotionPlanner(object):
         self.tree = RRTTree(self.bb)
         self.start = start
         self.goal = goal
+        self.increment =5
 
         # set search params
         self.ext_mode = ext_mode
@@ -61,10 +62,14 @@ class RRTMotionPlanner(object):
             sid = self.tree.get_idx_for_config(near_config)
             self.tree.add_edge(sid, eid, self.bb.compute_distance(near_config, rand_config))
         else:
-            new_config = near_config + ((rand_config - near_config) / self.bb.compute_distance(rand_config, near_config))*0.5
+            if self.bb.compute_distance(near_config, self.goal)<self.increment:
+                new_config = self.goal
+            else:
+                new_config = near_config + ((rand_config - near_config) / self.bb.compute_distance(rand_config, near_config))*self.increment
             if not self.bb.env.config_validity_checker(new_config) or not self.bb.env.edge_validity_checker(
                     near_config, new_config):
                 return
+
             eid = self.tree.add_vertex(new_config)
             sid = self.tree.get_idx_for_config(near_config)
             self.tree.add_edge(sid, eid, self.bb.compute_distance(new_config, near_config))
