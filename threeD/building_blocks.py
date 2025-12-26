@@ -36,16 +36,42 @@ class BuildingBlocks3D(object):
         @param goal_conf - the goal configuration
         :param goal_prob - the probability that goal should be sampled
         """
-        # TODO: HW2 5.2.1
-        pass
+        if random.random() < goal_prob:
+            return goal_conf
+        return [random.uniform(limit[0], limit[1]) for limit in self.ur_params.mechamical_limits.values()]
 
     def config_validity_checker(self, conf) -> bool:
         """check for collision in given configuration, arm-arm and arm-obstacle
         return False if in collision
         @param conf - some configuration
         """
-        # TODO: HW2 5.2.2- Pay attention that function is a little different than in HW2
-        pass
+        spheres = self.transform.conf2sphere_coords(conf)
+        # link link collision
+        for plc in self.possible_link_collisions:
+            obj_0_spheres = spheres[plc[0]]
+            obj_0_radius = self.ur_params.sphere_radius[plc[0]]
+            obj_1_spheres = spheres[plc[1]]
+            obj_1_radius = self.ur_params.sphere_radius[plc[1]]
+            for obj_1_sphere in obj_1_spheres:
+                for obj_0_sphere in obj_0_spheres:
+                    if math.dist(obj_0_sphere, obj_1_sphere) < obj_0_radius + obj_1_radius:
+                        return False
+        robot = list(self.transform.conf2sphere_coords(conf).items())
+        # link obstacle collision
+        for name, spheres in robot:
+            for sphere in spheres:
+                for obstacle in self.env.obstacles:
+                    if math.dist(sphere, obstacle) < self.env.radius + self.ur_params.sphere_radius[name]:
+                        return False
+        # link floor collision
+        for name, spheres in robot:
+            if name == "shoulder_link":
+                continue
+            for sphere in spheres:
+                if sphere[-1] - self.ur_params.sphere_radius[name] < 0:
+                    return False
+
+        return True
 
 
     def edge_validity_checker(self, prev_conf, current_conf) -> bool:
@@ -53,8 +79,19 @@ class BuildingBlocks3D(object):
         @param prev_conf - some configuration
         @param current_conf - current configuration
         """
-        # TODO: HW2 5.2.4
-        pass
+        length = self.compute_distance(current_conf, prev_conf)
+        amount = max(int(length / self.resolution), 2)
+        print(amount + 1)
+        current = prev_conf
+        increment = (current_conf - prev_conf) / amount
+        for i in range(amount + 1):
+            if self.config_validity_checker(current):
+                current += increment
+            else:
+                print(i + 1)
+                return False
+        print(i + 1)
+        return True
 
     def compute_distance(self, conf1, conf2):
         """
