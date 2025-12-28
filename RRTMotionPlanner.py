@@ -24,7 +24,7 @@ class RRTMotionPlanner(object):
         '''
         self.tree.add_vertex(self.start)
         while not self.tree.is_goal_exists(self.goal):
-            rand_config = self.bb.sample_random_config(goal_prob=self.goal_prob, goal=self.goal)
+            rand_config = self.bb.sample_random_config(self.goal_prob, goal=self.goal)
             self.extend(self.tree.get_nearest_config(rand_config)[1], rand_config)
 
         current = self.tree.get_vertex_for_config(self.goal)

@@ -1,5 +1,6 @@
 import numpy as np
-
+import random
+import math
 
 class BuildingBlocks3D(object):
     """
@@ -45,6 +46,7 @@ class BuildingBlocks3D(object):
         return False if in collision
         @param conf - some configuration
         """
+        x = sum([math])
         spheres = self.transform.conf2sphere_coords(conf)
         # link link collision
         for plc in self.possible_link_collisions:

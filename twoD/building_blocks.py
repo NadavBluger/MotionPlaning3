@@ -1,8 +1,9 @@
 import itertools
 import math
-
+import random
 import numpy as np
 import shapely
+from fontTools.subset import usage
 from shapely.geometry import Point, LineString
 
 class BuildingBlocks2D(object):
@@ -246,14 +247,17 @@ class BuildingBlocks2D(object):
 
         return True
 
-    def compute_union_of_points(self, points1, points2):
+    def compute_union_of_points(self, points1:np.ndarray, points2: np.ndarray):
         '''
         Compute a union of two sets of inpection points.
         @param points1 list of inspected points.
         @param points2 list of inspected points.
         '''
-        # TODO: HW3 2.3.2
-        pass
+        union=list(points1)
+        for point in points2:
+            if point not in union:
+                union.append(point)
+        return np.ndarray(union)
 
     def compute_coverage(self, inspected_points):
         '''
@@ -261,3 +265,13 @@ class BuildingBlocks2D(object):
         @param inspected_points list of inspected points.
         '''
         return len(inspected_points) / len(self.env.inspection_points)
+
+    def sample_random_config(self, goal_prob, goal_conf) -> np.array:
+        """
+        sample random configuration
+        @param goal_conf - the goal configuration
+        :param goal_prob - the probability that goal should be sampled
+        """
+        if random.random() < goal_prob:
+            return goal_conf
+        return [random.uniform(-np.pi,np.pi) for _ in range(4)]
