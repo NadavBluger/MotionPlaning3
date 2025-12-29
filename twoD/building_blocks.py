@@ -253,17 +253,19 @@ class BuildingBlocks2D(object):
         @param points1 list of inspected points.
         @param points2 list of inspected points.
         '''
-        union=list(points1)
-        for point in points2:
-            if point not in union:
-                union.append(point)
-        return np.ndarray(union)
+        if len(points1) == 0:
+            return points2
+        if len(points2) == 0:
+            return points1
+
+        return np.unique(np.vstack((points1, points2)), axis=0)
 
     def compute_coverage(self, inspected_points):
         '''
         Compute the coverage of the map as the portion of points that were already inspected.
         @param inspected_points list of inspected points.
         '''
+
         return len(inspected_points) / len(self.env.inspection_points)
 
     def sample_random_config(self, goal_prob, goal_conf) -> np.array:
