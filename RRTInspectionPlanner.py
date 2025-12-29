@@ -28,11 +28,11 @@ class RRTInspectionPlanner(object):
         '''
         self.tree.add_vertex(self.start, self.bb.get_inspected_points(self.start))
 
-        while self.tree.max_coverage < 0.25:
-            rand_config = self.bb.sample_random_config(self.goal_prob, [0,0,-np.pi/2,0])
+        while self.tree.max_coverage < self.coverage:
+            rand_config = self.bb.sample_random_config(self.goal_prob, np.array([0,0,-np.pi/2,0]))
             self.extend(self.tree.get_nearest_config(rand_config)[1], rand_config)
 
-        print(self.tree.max_coverage)
+
         current = self.tree.vertices[self.tree.max_coverage_id]
         plan = [current.config]
         while np.any(current.config != self.start):
@@ -68,14 +68,17 @@ class RRTInspectionPlanner(object):
             eid = self.tree.add_vertex(rand_config, new_inspected_points)
             self.tree.add_edge(sid, eid, self.bb.compute_distance(near_config, rand_config))
         else:
-            new_config = near_config + ((rand_config - near_config) / self.bb.compute_distance(rand_config, near_config)) * self.step_size
+            if self.bb.compute_distance(rand_config, near_config) < self.step_size:
+                new_config = rand_config
+            else:
+                new_config = near_config + ((rand_config - near_config) / self.bb.compute_distance(rand_config, near_config)) * self.step_size
             if not self.bb.config_validity_checker(new_config) or not self.bb.edge_validity_checker(
                     near_config, new_config):
                 return
 
             sid = self.tree.get_idx_for_config(near_config)
             new_inspected_points = self.bb.compute_union_of_points(
-                self.bb.get_inspected_points(rand_config), self.tree.vertices[sid].inspected_points)
+                self.bb.get_inspected_points(new_config), self.tree.vertices[sid].inspected_points)
             eid = self.tree.add_vertex(new_config, new_inspected_points)
 
             self.tree.add_edge(sid, eid, self.bb.compute_distance(new_config, near_config))

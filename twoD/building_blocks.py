@@ -276,4 +276,4 @@ class BuildingBlocks2D(object):
         """
         if random.random() < goal_prob:
             return goal_conf
-        return [random.uniform(-np.pi,np.pi) for _ in range(4)]
+        return np.array([random.uniform(-np.pi,np.pi) for _ in range(4)])
