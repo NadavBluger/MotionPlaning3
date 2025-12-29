@@ -60,7 +60,7 @@ class RRTStarPlanner(object):
 
     def extend(self, x_near, x_rand):
         if self.ext_mode == "E1":
-            if not self.bb.env.config_validity_checker(x_rand) or not self.bb.env.edge_validity_checker(
+            if not self.bb.config_validity_checker(x_rand) or not self.bb.edge_validity_checker(
                     x_near, x_rand):
                 return
             eid = self.tree.add_vertex(x_rand)
@@ -72,7 +72,7 @@ class RRTStarPlanner(object):
                 new_config = self.goal
             else:
                 new_config = x_near + ((x_rand - x_near) / self.bb.compute_distance(x_rand, x_near)) * self.increment
-            if not self.bb.env.config_validity_checker(new_config) or not self.bb.env.edge_validity_checker(x_near, new_config):
+            if not self.bb.config_validity_checker(new_config) or not self.bb.edge_validity_checker(x_near, new_config):
                 return
 
             eid = self.tree.add_vertex(new_config)
@@ -80,7 +80,7 @@ class RRTStarPlanner(object):
             self.tree.add_edge(sid, eid, self.bb.compute_distance(new_config, x_near))
         nearest_neighbors_ids, nearest_neighbors_configs = self.tree.get_k_nearest_neighbors(new_config, k=min(self.k, len(self.tree.vertices)-1))
         for parent_id, parent_config in zip(nearest_neighbors_ids, nearest_neighbors_configs):
-            if self.bb.env.edge_validity_checker(parent_config, new_config):
+            if self.bb.edge_validity_checker(parent_config, new_config):
                 c = self.bb.compute_distance(parent_config, new_config)
                 if self.tree.get_vertex_for_config(parent_config).cost+c < self.tree.get_vertex_for_config(new_config).cost:
                     self.tree.edges[eid] = parent_id

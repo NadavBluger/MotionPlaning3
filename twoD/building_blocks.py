@@ -268,12 +268,12 @@ class BuildingBlocks2D(object):
 
         return len(inspected_points) / len(self.env.inspection_points)
 
-    def sample_random_config(self, goal_prob, goal_conf) -> np.array:
+    def sample_random_config(self, goal_prob, goal) -> np.array:
         """
         sample random configuration
         @param goal_conf - the goal configuration
         :param goal_prob - the probability that goal should be sampled
         """
         if random.random() < goal_prob:
-            return goal_conf
-        return [random.uniform(-np.pi,np.pi) for _ in range(4)]
+            return goal
+        return np.array([random.uniform(-np.pi, np.pi) for _ in range(4)], dtype=float)
