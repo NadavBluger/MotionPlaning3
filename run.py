@@ -10,7 +10,7 @@ from twoD.building_blocks import BuildingBlocks2D
 from twoD.dot_visualizer import DotVisualizer
 from threeD.environment import Environment
 from threeD.kinematics import UR5e_PARAMS, Transform
-from threeD.building_blocks import BuildingBlocks3D
+from building_blocks import BuildingBlocks3D
 from threeD.visualizer import Visualize_UR
 from AStarPlanner import AStarPlanner
 from RRTMotionPlanner import RRTMotionPlanner
@@ -72,7 +72,7 @@ def run_2d_rrt_motion_planning():
     MAP_DETAILS = {"json_file": "twoD/map_mp.json", "start": np.array([0.78, -0.78, 0.0, 0.0]), "goal": np.array([0.3, 0.15, 1.0, 1.1])}
     planning_env = MapEnvironment(json_file=MAP_DETAILS["json_file"], task="mp")
     bb = BuildingBlocks2D(planning_env)
-    planner = RRTMotionPlanner(bb=bb, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"], ext_mode="E2", goal_prob=0.01)
+    planner = RRTMotionPlanner(bb=bb, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"], ext_mode="E2", goal_prob=.2)
     # execute plan
     plan = planner.plan()
     Visualizer(bb).visualize_plan(plan=plan, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"])
@@ -139,145 +139,82 @@ def run_3d():
 
         visualizer.show_path(path)
 
-def run_trials_2d_manipulator(ext_mode, goal_prob, trials=10, k=5, step_size= 5):
-    MAP_DETAILS = {
-        "json_file": "twoD/map_mp.json",
-        "start": np.array([0.78, -0.78, 0.0, 0.0]),
-        "goal":  np.array([0.3,  0.15, 1.0, 1.1]),
+def run_all_trials_and_plot(num_trials_per_setting):
+    """
+    Runs trials for all four settings:
+      (E1, 5%), (E1, 20%), (E2, 5%), (E2, 20%)
+    """
+
+
+    color_map = {
+        ("E1", 0.05): "blue",
+        ("E1", 0.20): "cyan",
+        ("E2", 0.05): "red",
+        ("E2", 0.20): "orange",
     }
 
-    planning_env = MapEnvironment(json_file=MAP_DETAILS["json_file"], task="mp")
-    bb = BuildingBlocks2D(planning_env)
+    results = {cfg: {"times": [], "costs": []} for cfg in [("E1", 0.05), ("E1", 0.20), ("E2", 0.05), ("E2", 0.20)]}
 
-    costs = []
-    times = []
+    # Run trials
+    for ext_mode, goal_prob in [("E1", 0.05), ("E1", 0.20), ("E2", 0.05), ("E2", 0.20)]:
+        for _ in range(num_trials_per_setting):
+            t, c = run_2d_rrt_motion_planning_trial(ext_mode, goal_prob)
+            results[(ext_mode, goal_prob)]["times"].append(t)
+            results[(ext_mode, goal_prob)]["costs"].append(c)
 
-    for i in range(trials):
-        planner = RRTStarPlanner(
-            bb=bb,
-            ext_mode=ext_mode,
-            step_size=step_size,
-            start=MAP_DETAILS["start"],
-            goal=MAP_DETAILS["goal"],
-            max_itr=20000,
-            stop_on_goal=True,
-            k=k,
-            goal_prob=goal_prob,
+    # Plot all outcomes together
+    plt.figure()
+    for (ext_mode, goal_prob), data in results.items():
+        plt.scatter(
+            data["times"],
+            data["costs"],
+            color=color_map[(ext_mode, goal_prob)],
+            label=f"{ext_mode}, {int(goal_prob*100)}%"
         )
+    plt.xlabel("Time (s)")
+    plt.ylabel("Cost")
+    plt.title("RRT outcomes: time vs cost (all runs)")
+    plt.legend()
+    plt.show()
 
-        t0 = time.perf_counter()
-        plan = planner.plan()
-        t1 = time.perf_counter()
+    # OVERALL stats across ALL runs
+    all_times = []
+    all_costs = []
+    for data in results.values():
+        all_times.extend(data["times"])
+        all_costs.extend(data["costs"])
 
-        exec_time = t1 - t0
-        cost = planner.compute_cost(plan)
+    all_times = np.array(all_times, dtype=float)
+    all_costs = np.array(all_costs, dtype=float)
 
-        times.append(exec_time)
-        costs.append(cost)
-
-        # Representative visualization for each parameter combo: save/attach manually if needed
-        # easiest: visualize the FIRST run for each combo outside this loop (see below)
-
-    times = np.array(times, dtype=float)
-    costs = np.array(costs, dtype=float)
-
-    return {
-        "ext_mode": ext_mode,
-        "goal_prob": goal_prob,
-        "times": times,
-        "costs": costs,
-        "mean_time": float(times.mean()),
-        "std_time": float(times.std(ddof=1)),   # sample stdev
-        "mean_cost": float(costs.mean()),
-        "std_cost": float(costs.std(ddof=1)),   # sample stdev
-    }
-def experiment_2d_manipulator_all():
-    trials = 10
-    k = 5
-    step_size = 5
-
-    results = []
-
-    for ext_mode in ["E1", "E2"]:
-        r5  = run_trials_2d_manipulator(ext_mode, 0.05, trials=trials, k=k, step_size=step_size)
-        r20 = run_trials_2d_manipulator(ext_mode, 0.20, trials=trials, k=k, step_size=step_size)
-        results.append((r5, r20))
-        print("here")
-
-        # Print report
-        print(f"\n==== 2D Manipulator | extend={ext_mode} ====")
-        print(f"Goal bias 5% :  mean time={r5['mean_time']:.4f}s  stdev={r5['std_time']:.4f}s | "
-              f"mean cost={r5['mean_cost']:.4f}  stdev={r5['std_cost']:.4f}")
-        print(f"Goal bias 20%: mean time={r20['mean_time']:.4f}s stdev={r20['std_time']:.4f}s | "
-              f"mean cost={r20['mean_cost']:.4f} stdev={r20['std_cost']:.4f}")
-
-        # Scatter plot (20 points) for this extend mode
-        plt.figure()
-        plt.scatter(r5["times"],  r5["costs"],  label="goal bias 5%")
-        plt.scatter(r20["times"], r20["costs"], label="goal bias 20%")
-        plt.xlabel("Time to solution (s)")
-        plt.ylabel("Path cost")
-        plt.title(f"RRT* outcomes (extend={ext_mode})")
-        plt.legend()
-        plt.show()
+    print("\n=== OVERALL STATISTICS (all iterations combined) ===")
+    print(f"Total runs: {len(all_times)}")
+    print(f"Average time (overall): {all_times.mean():.4f} seconds")
+    print(f"Standard deviation of time (overall): {all_times.std(ddof=1):.4f} seconds")
+    print(f"Average cost (overall): {all_costs.mean():.4f}")
+    print(f"Standard deviation of cost (overall): {all_costs.std(ddof=1):.4f}")
 
     return results
-def visualize_representatives_2d_manipulator():
-    MAP_DETAILS = {
-        "json_file": "twoD/map_mp.json",
-        "start": np.array([0.78, -0.78, 0.0, 0.0]),
-        "goal":  np.array([0.3,  0.15, 1.0, 1.1]),
-    }
+
+
+def run_trials_2d_manipulator():
+    # 5 runs per setting -> 4 settings -> 20 total outcomes
+    return run_all_trials_and_plot(num_trials_per_setting=10)
+def run_2d_rrt_motion_planning_trial(ext_mode, goal_probs):
+    MAP_DETAILS = {"json_file": "twoD/map_mp.json", "start": np.array([0.78, -0.78, 0.0, 0.0]), "goal": np.array([0.3, 0.15, 1.0, 1.1])}
     planning_env = MapEnvironment(json_file=MAP_DETAILS["json_file"], task="mp")
     bb = BuildingBlocks2D(planning_env)
+    planner = RRTMotionPlanner(bb=bb, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"], ext_mode=ext_mode, goal_prob=goal_probs)
 
-    for ext_mode in ["E1", "E2"]:
-        for goal_prob in [0.05, 0.20]:
-            planner = RRTStarPlanner(
-                bb=bb,
-                ext_mode=ext_mode,
-                step_size=0.1,
-                start=MAP_DETAILS["start"],
-                goal=MAP_DETAILS["goal"],
-                max_itr=20000,
-                stop_on_goal=True,
-                k=5,
-                goal_prob=goal_prob,
-            )
-            plan = planner.plan()
-            Visualizer(bb).visualize_plan(plan=plan, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"])
+    t0 = time.perf_counter()
+    plan = planner.plan()
+    t1 = time.perf_counter()
+    print("complete iter")
+    return (t1 - t0), planner.compute_cost(plan)
 
 
-def dot_tree_figures_all():
-    planning_env = MapDotEnvironment(json_file=MAP_DETAILS["json_file"])
-    bb = DotBuildingBlocks2D(planning_env)
-
-    for ext_mode in ["E1", "E2"]:
-        for goal_prob in [0.05, 0.20]:
-            planner = RRTStarPlanner(
-                bb=bb,
-                start=MAP_DETAILS["start"],
-                goal=MAP_DETAILS["goal"],
-                ext_mode=ext_mode,
-                goal_prob=goal_prob,
-                k=5,
-                step_size=None
-            )
-            plan = planner.plan()
-            DotVisualizer(bb).visualize_map(
-                plan=plan,
-                tree_edges=planner.tree.get_edges_as_states(),
-                show_map=True
-            )
 if __name__ == "__main__":
-    # 1) prints mean+stdev and shows the scatter plots (per extend mode)
-    #experiment_2d_manipulator_all()
-
-    # 2) creates the 4 representative Visualizer(bb).visualize_plan figures
-   # visualize_representatives_2d_manipulator()
-
-    # 3) creates the Dot-environment final-tree figures for both biases (and both extend modes)
-  #  dot_tree_figures_all()
+    #run_trials_2d_manipulator()
     # run_dot_2d_astar()
    # run_dot_2d_rrt()
     #run_dot_2d_rrt_star()
