@@ -63,8 +63,8 @@ class RRTInspectionPlanner(object):
                     near_config, rand_config):
                 return
             sid = self.tree.get_idx_for_config(near_config)
-            new_inspected_points=self.bb.compute_union_of_points(
-                self.bb.get_inspected_points(rand_config),self.tree[sid].inspected_points)
+            new_inspected_points = self.bb.compute_union_of_points(
+                self.bb.get_inspected_points(rand_config), self.tree[sid].inspected_points)
             eid = self.tree.add_vertex(rand_config, new_inspected_points)
             self.tree.add_edge(sid, eid, self.bb.compute_distance(near_config, rand_config))
         else:
