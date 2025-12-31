@@ -28,10 +28,24 @@ class RRTInspectionPlanner(object):
         '''
         self.tree.add_vertex(self.start, self.bb.get_inspected_points(self.start))
 
+        best_config = np.array([0,0,-np.pi/2,0])
+        best_coverage = self.bb.compute_coverage(self.bb.get_inspected_points(best_config))
         while self.tree.max_coverage < self.coverage:
-            rand_config = self.bb.sample_random_config(self.goal_prob, np.array([0,0,-np.pi/2,0]))
+            rand_config = self.bb.sample_random_config(self.goal_prob, best_config)
             self.extend(self.tree.get_nearest_config(rand_config)[1], rand_config)
-
+            already_inspected = self.tree.vertices[self.tree.max_coverage_id].inspected_points
+            new_points = self.bb.get_inspected_points(rand_config)
+            if len(already_inspected) == 0:
+                combined_points = new_points
+            elif len(new_points) == 0:
+                combined_points = already_inspected
+            else:
+                combined_points = np.unique(np.vstack((already_inspected, new_points)), axis=0)
+            if (self.bb.compute_coverage(combined_points) > best_coverage and
+                    not self.tree.is_goal_exists(rand_config)):
+                best_coverage = self.bb.compute_coverage(combined_points)
+                best_config = rand_config
+            print(self.tree.max_coverage, best_coverage)
 
         current = self.tree.vertices[self.tree.max_coverage_id]
         plan = [current.config]
@@ -41,6 +55,13 @@ class RRTInspectionPlanner(object):
 
         return np.array(plan)[::-1]
 
+    def get_goal(self):
+        while True:
+            goal = random.choice(self.bb.env.inspection_points)
+            if not len(self.tree.vertices[self.tree.max_coverage_id].inspected_points):
+                return self.bb.compute_inverse_kinematics(goal)
+            if goal not in self.tree.vertices[self.tree.max_coverage_id].inspected_points:
+                return self.bb.compute_inverse_kinematics(goal)
 
     def compute_cost(self, plan):
         '''
@@ -82,4 +103,3 @@ class RRTInspectionPlanner(object):
             eid = self.tree.add_vertex(new_config, new_inspected_points)
 
             self.tree.add_edge(sid, eid, self.bb.compute_distance(new_config, near_config))
-

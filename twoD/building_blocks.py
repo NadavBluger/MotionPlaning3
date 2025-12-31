@@ -277,3 +277,61 @@ class BuildingBlocks2D(object):
         if random.random() < goal_prob:
             return goal
         return np.array([random.uniform(-np.pi, np.pi) for _ in range(4)], dtype=float)
+
+    def compute_inverse_kinematics(self, target_pos, initial_guess=None, max_iter=100, tolerance=1e-3):
+        """
+        Calculates joint angles for a 4-DOF planar robot to reach a target (x, y) point.
+
+        :param target_pos: Tuple or list (x, y) of the target point.
+        :param initial_guess: Optional initial configuration (numpy array).
+        :return: Numpy array of joint angles [theta1, theta2, theta3, theta4].
+        """
+        # 1. Initialize configuration (q)
+        if initial_guess is not None:
+            q = np.array(initial_guess, dtype=float)
+        else:
+            q = np.zeros(len(self.links))  # Start with all zeros if no guess
+
+        target = np.array(target_pos)
+
+        for _ in range(max_iter):
+            # --- Forward Kinematics ---
+            # Calculate absolute angles for each link (cumulative sum of relative angles)
+            theta_abs = np.cumsum(q)
+
+            # Calculate end-effector position
+            # x = sum(l_i * cos(theta_abs_i))
+            # y = sum(l_i * sin(theta_abs_i))
+            current_x = np.sum(self.links * np.cos(theta_abs))
+            current_y = np.sum(self.links * np.sin(theta_abs))
+            current_pos = np.array([current_x, current_y])
+
+            # --- Check Error ---
+            error = target - current_pos
+            if np.linalg.norm(error) < tolerance:
+                return q  # Converged
+
+            # --- Compute Jacobian (2x4 Matrix) ---
+            # J = [ dx/dtheta1  dx/dtheta2 ... ]
+            #     [ dy/dtheta1  dy/dtheta2 ... ]
+            #
+            # For a planar arm, the derivative w.r.t joint i affects all subsequent links (i to N).
+            # dx/dq_i = - sum_{j=i}^{N} l_j * sin(theta_abs_j)
+            # dy/dq_i =   sum_{j=i}^{N} l_j * cos(theta_abs_j)
+
+            J = np.zeros((2, len(self.links)))
+            for i in range(len(self.links)):
+                J[0, i] = -np.sum(self.links[i:] * np.sin(theta_abs[i:]))  # dx/dtheta_i
+                J[1, i] = np.sum(self.links[i:] * np.cos(theta_abs[i:]))  # dy/dtheta_i
+
+            # --- Update Steps (Pseudo-Inverse) ---
+            # dq = pinv(J) * error
+            dq = np.linalg.pinv(J) @ error
+
+            # Update q
+            q = q + dq
+
+            # Normalize angles to be within [-pi, pi] (Optional but recommended)
+            q = (q + np.pi) % (2 * np.pi) - np.pi
+
+        return q  # Return best effort if not fully converged
