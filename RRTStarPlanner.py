@@ -41,7 +41,7 @@ class RRTStarPlanner(object):
         """
         self.tree.add_vertex(self.start)
         while not self.tree.is_goal_exists(self.goal):
-            rand_config = self.bb.sample_random_config(goal_prob=self.goal_prob, goal=self.goal)
+            rand_config = self.bb.sample_random_config(self.goal_prob, self.goal)
             self.extend(self.tree.get_nearest_config(rand_config)[1], rand_config)
 
         current = self.tree.get_vertex_for_config(self.goal)
@@ -68,7 +68,7 @@ class RRTStarPlanner(object):
             self.tree.add_edge(sid, eid, self.bb.compute_distance(x_near, x_rand))
             new_config = x_rand
         else:
-            if self.bb.compute_distance(x_near, self.goal) < self.increment:
+            if self.bb.compute_distance(x_near, self.goal) < self.increment and not self.stop_on_goal:
                 new_config = self.goal
             else:
                 new_config = x_near + ((x_rand - x_near) / self.bb.compute_distance(x_rand, x_near)) * self.increment

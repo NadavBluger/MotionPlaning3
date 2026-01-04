@@ -27,7 +27,7 @@ class RRTInspectionPlanner(object):
         Compute and return the plan. The function should return a numpy array containing the states in the configuration space.
         '''
         self.tree.add_vertex(self.start, self.bb.get_inspected_points(self.start))
-
+        #TODO: make near_conf the conf with the most seen points not the nearest (that is nearest? maybe with E1 that's not needed) or maybe only when config sampling make it so
         best_config = np.array([0,0,-np.pi/2,0])
         best_coverage = self.bb.compute_coverage(self.bb.get_inspected_points(best_config))
         while self.tree.max_coverage < self.coverage:
@@ -41,11 +41,10 @@ class RRTInspectionPlanner(object):
                 combined_points = already_inspected
             else:
                 combined_points = np.unique(np.vstack((already_inspected, new_points)), axis=0)
-            if (self.bb.compute_coverage(combined_points) > best_coverage and
-                    not self.tree.is_goal_exists(rand_config)):
+            if (self.bb.compute_coverage(combined_points) > best_coverage):
                 best_coverage = self.bb.compute_coverage(combined_points)
                 best_config = rand_config
-            print(self.tree.max_coverage, best_coverage)
+            #print(self.tree.max_coverage, best_coverage)
 
         current = self.tree.vertices[self.tree.max_coverage_id]
         plan = [current.config]
@@ -80,12 +79,12 @@ class RRTInspectionPlanner(object):
         @param rand_config The sampled configuration.
         '''
         if self.ext_mode == "E1":
-            if not self.bb.env.config_validity_checker(rand_config) or not self.bb.env.edge_validity_checker(
+            if not self.bb.config_validity_checker(rand_config) or not self.bb.edge_validity_checker(
                     near_config, rand_config):
                 return
             sid = self.tree.get_idx_for_config(near_config)
             new_inspected_points = self.bb.compute_union_of_points(
-                self.bb.get_inspected_points(rand_config), self.tree[sid].inspected_points)
+                self.bb.get_inspected_points(rand_config), self.tree.vertices[sid].inspected_points)
             eid = self.tree.add_vertex(rand_config, new_inspected_points)
             self.tree.add_edge(sid, eid, self.bb.compute_distance(near_config, rand_config))
         else:

@@ -46,11 +46,13 @@ class BuildingBlocks3D(object):
         return False if in collision
         @param conf - some configuration
         """
-        positions = self.env.compute_forward_kinematics(given_config=conf)
-        for position in positions:
-            if position[0]>0.4:
-                return False
         spheres = self.transform.conf2sphere_coords(conf)
+        for link_position in spheres.values():
+            for sphere in link_position:
+                if sphere[0]>0.4:
+                    print("window")
+                    return False
+
         # link link collision
         for plc in self.possible_link_collisions:
             obj_0_spheres = spheres[plc[0]]
@@ -60,6 +62,7 @@ class BuildingBlocks3D(object):
             for obj_1_sphere in obj_1_spheres:
                 for obj_0_sphere in obj_0_spheres:
                     if math.dist(obj_0_sphere, obj_1_sphere) < obj_0_radius + obj_1_radius:
+                        print("link")
                         return False
         robot = list(self.transform.conf2sphere_coords(conf).items())
         # link obstacle collision
@@ -67,6 +70,7 @@ class BuildingBlocks3D(object):
             for sphere in spheres:
                 for obstacle in self.env.obstacles:
                     if math.dist(sphere, obstacle) < self.env.radius + self.ur_params.sphere_radius[name]:
+                        print("obstacle")
                         return False
         # link floor collision
         for name, spheres in robot:
@@ -74,28 +78,27 @@ class BuildingBlocks3D(object):
                 continue
             for sphere in spheres:
                 if sphere[-1] - self.ur_params.sphere_radius[name] < 0:
+                    print("floor")
                     return False
 
         return True
 
 
     def edge_validity_checker(self, prev_conf, current_conf) -> bool:
-        """check for collisions between two configurations - return True if trasition is valid
+        """check for collisions between two configurations - return True if transition is valid
         @param prev_conf - some configuration
         @param current_conf - current configuration
         """
-        length = self.compute_distance(current_conf, prev_conf)
+        #length = self.compute_distance(current_conf, prev_conf)
+        length = np.linalg.norm(current_conf - prev_conf)
         amount = max(int(length / self.resolution), 2)
-        print(amount + 1)
         current = prev_conf
         increment = (current_conf - prev_conf) / amount
         for i in range(amount + 1):
             if self.config_validity_checker(current):
                 current += increment
             else:
-                print(i + 1)
                 return False
-        print(i + 1)
         return True
 
     def compute_distance(self, conf1, conf2):
