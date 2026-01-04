@@ -86,7 +86,7 @@ def run_2d_rrt_inspection_planning():
     for i in range(10):
         planning_env = MapEnvironment(json_file=MAP_DETAILS["json_file"], task="ip")
         bb = BuildingBlocks2D(planning_env)
-        planner = RRTInspectionPlanner(bb=bb, start=MAP_DETAILS["start"], ext_mode="E1", goal_prob=0.1, coverage=0.75)
+        planner = RRTInspectionPlanner(bb=bb, start=MAP_DETAILS["start"], ext_mode="E2", goal_prob=0.1, coverage=0.75)
         start_time=time.time()
         plan = planner.plan()
         times.append(time.time()-start_time)
@@ -290,6 +290,6 @@ if __name__ == "__main__":
    # run_dot_2d_rrt()
     #run_dot_2d_rrt_star()
     # run_2d_rrt_motion_planning()
-    # run_2d_rrt_inspection_planning()
+     run_2d_rrt_inspection_planning()
     # run_2d_rrt_star_motion_planning()
-    run_3d()
+    #run_3d()

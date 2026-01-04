@@ -32,7 +32,8 @@ class RRTInspectionPlanner(object):
         best_coverage = self.bb.compute_coverage(self.bb.get_inspected_points(best_config))
         while self.tree.max_coverage < self.coverage:
             rand_config = self.bb.sample_random_config(self.goal_prob, best_config)
-            self.extend(self.tree.get_nearest_config(rand_config)[1], rand_config)
+            #self.extend(self.tree.get_nearest_config(rand_config)[1], rand_config)
+            self.extend(self.tree.vertices[self.tree.max_coverage_id].config, rand_config)
             already_inspected = self.tree.vertices[self.tree.max_coverage_id].inspected_points
             new_points = self.bb.get_inspected_points(rand_config)
             if len(already_inspected) == 0:
