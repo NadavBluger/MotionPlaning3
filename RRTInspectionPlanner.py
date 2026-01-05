@@ -27,7 +27,6 @@ class RRTInspectionPlanner(object):
         Compute and return the plan. The function should return a numpy array containing the states in the configuration space.
         '''
         self.tree.add_vertex(self.start, self.bb.get_inspected_points(self.start))
-        #TODO: make near_conf the conf with the most seen points not the nearest (that is nearest? maybe with E1 that's not needed) or maybe only when config sampling make it so
         best_config = np.array([0,0,-np.pi/2,0])
         best_coverage = self.bb.compute_coverage(self.bb.get_inspected_points(best_config))
         while self.tree.max_coverage < self.coverage:
@@ -55,13 +54,6 @@ class RRTInspectionPlanner(object):
 
         return np.array(plan)[::-1]
 
-    def get_goal(self):
-        while True:
-            goal = random.choice(self.bb.env.inspection_points)
-            if not len(self.tree.vertices[self.tree.max_coverage_id].inspected_points):
-                return self.bb.compute_inverse_kinematics(goal)
-            if goal not in self.tree.vertices[self.tree.max_coverage_id].inspected_points:
-                return self.bb.compute_inverse_kinematics(goal)
 
     def compute_cost(self, plan):
         '''

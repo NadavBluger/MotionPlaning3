@@ -62,7 +62,7 @@ def run_2d_rrt_star_motion_planning():
         goal=MAP_DETAILS["goal"],
         ext_mode="E2",
         goal_prob=0.5,
-        max_step_size=0.1,
+        step_size=0.1,
     )
     # execute plan
     plan = planner.plan()
@@ -278,18 +278,11 @@ def dot_tree_figures_all():
                 show_map=True
             )
 if __name__ == "__main__":
-    # 1) prints mean+stdev and shows the scatter plots (per extend mode)
-    #experiment_2d_manipulator_all()
-
-    # 2) creates the 4 representative Visualizer(bb).visualize_plan figures
-   # visualize_representatives_2d_manipulator()
-
-    # 3) creates the Dot-environment final-tree figures for both biases (and both extend modes)
-  #  dot_tree_figures_all()
+    # dot_tree_figures_all()
     # run_dot_2d_astar()
-   # run_dot_2d_rrt()
-    #run_dot_2d_rrt_star()
+    # run_dot_2d_rrt()
+    # run_dot_2d_rrt_star()
     # run_2d_rrt_motion_planning()
-     run_2d_rrt_inspection_planning()
-    # run_2d_rrt_star_motion_planning()
-    #run_3d()
+    # run_2d_rrt_inspection_planning()
+    run_2d_rrt_star_motion_planning()
+    # run_3d()

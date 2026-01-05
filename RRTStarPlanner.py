@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from RRTTree import RRTTree
 import time
@@ -78,11 +80,23 @@ class RRTStarPlanner(object):
             eid = self.tree.add_vertex(new_config)
             sid = self.tree.get_idx_for_config(x_near)
             self.tree.add_edge(sid, eid, self.bb.compute_distance(new_config, x_near))
-        nearest_neighbors_ids, nearest_neighbors_configs = self.tree.get_k_nearest_neighbors(new_config, k=min(self.k, len(self.tree.vertices)-1))
+        if self.k is None:
+            i = len(self.tree.vertices)
+            d = len(new_config)
+            k = (math.log(i)/i)**(1/d)
+        else:
+            k = min(self.k, len(self.tree.vertices)-1)
+        nearest_neighbors_ids, nearest_neighbors_configs = self.tree.get_k_nearest_neighbors(new_config, k=k)
         for parent_id, parent_config in zip(nearest_neighbors_ids, nearest_neighbors_configs):
             if self.bb.edge_validity_checker(parent_config, new_config):
                 c = self.bb.compute_distance(parent_config, new_config)
                 if self.tree.get_vertex_for_config(parent_config).cost+c < self.tree.get_vertex_for_config(new_config).cost:
                     self.tree.edges[eid] = parent_id
                     self.tree.vertices[eid].set_cost(self.tree.vertices[parent_id].cost+c)
+        for parent_id, parent_config in zip(nearest_neighbors_ids, nearest_neighbors_configs):
+            if self.bb.edge_validity_checker(parent_config, new_config):
+                c = self.bb.compute_distance(parent_config, new_config)
+                if self.tree.get_vertex_for_config(new_config).cost+c < self.tree.get_vertex_for_config(parent_config).cost:
+                    self.tree.edges[parent_id] = eid
+                    self.tree.vertices[parent_id].set_cost(self.tree.vertices[eid].cost+c)
 
