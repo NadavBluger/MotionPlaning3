@@ -48,22 +48,22 @@ class RRTStarPlanner(object):
         cost=inf
         start = time.time()
         #while not (self.tree.is_goal_exists(self.goal) and self.stop_on_goal) and itrs <self.max_itr:
-        while not (self.tree.is_goal_exists(self.goal) and self.stop_on_goal) and time.time()-start < 30.5:
+        while not (self.tree.is_goal_exists(self.goal) and self.stop_on_goal) and itrs<self.max_itr:
             rand_config = self.bb.sample_random_config(self.goal_prob, self.goal)
             # print(rand_config)
             self.extend(self.tree.get_nearest_config(rand_config)[1], rand_config)
             itrs+=1
-            if self.tree.is_goal_exists(self.goal) and self.compute_cost(self.get_path()) <cost:
-                cost = self.compute_cost(self.get_path())
-                costs.append((time.time()-start, cost))
-                print(costs[-1])
-            # if itrs %200 ==0:
-            #     paths.append(self.get_path())
+            # if self.tree.is_goal_exists(self.goal) and self.compute_cost(self.get_path()) <cost:
+            #     cost = self.compute_cost(self.get_path())
+            #     costs.append((time.time()-start, cost))
+            #     print(costs[-1])
+            if itrs %200 ==0:
+                costs.append(self.compute_cost(self.get_path()))
         print(time.time()-start)
         print(costs)
         print(len(self.tree.edges))
         print(f"{self.rewires=}")
-        return self.get_path(), costs
+        return self.get_path()
 
     def get_path(self):
         if self.tree.is_goal_exists(self.goal):

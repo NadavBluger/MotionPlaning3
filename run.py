@@ -68,7 +68,8 @@ def run_2d_rrt_star_motion_planning():
             goal_prob=0.2,
             step_size=0.1,
             stop_on_goal=False,
-            k=50
+            k=3
+
         )
         # execute plan
         plan, costs = planner.plan()
@@ -119,9 +120,9 @@ def run_3d(max_step_size, p_bias ):
                                       bb=bb,
                                       goal_prob=p_bias,
                                       ext_mode="E2")
-    paths = rrt_star_planner.plan()
+    path = rrt_star_planner.plan()
 
-    if paths[-1] is not None:
+    if path is not None:
 
         # create a folder for the experiment
         # Format the time string as desired (YYYY-MM-DD_HH-MM-SS)
@@ -137,16 +138,16 @@ def run_3d(max_step_size, p_bias ):
             os.mkdir(exp_folder_name)
 
         # save the path
-        np.save(os.path.join(exp_folder_name, 'path'), paths[-1])
+        np.save(os.path.join(exp_folder_name, 'path'), path)
 
         # save the cost of the path and time it took to compute
         with open(os.path.join(exp_folder_name, 'stats'), "w") as file:
-            file.write("Path cost: {} \n".format(rrt_star_planner.compute_cost(paths[-1])))
+            file.write("Path cost: {} \n".format(rrt_star_planner.compute_cost(path)))
 
         time.sleep(10)
         print("showing path")
-        visualizer.show_path(paths[-1])
-        return paths
+        visualizer.show_path(path)
+        return path
 
 def run_trials_2d_manipulator(ext_mode, goal_prob, trials=10, k=5, step_size= 5):
     MAP_DETAILS = {
@@ -285,13 +286,13 @@ if __name__ == "__main__":
     # run_dot_2d_rrt_star()
     # run_2d_rrt_motion_planning()
     # run_2d_rrt_inspection_planning()
-    run_2d_rrt_star_motion_planning()
-    # res =dict()
-    # for p in [0.05, 0.2]:
-    #     for m in [0.05, 0.075, 0.1, 0.125, 0.2, 0.25,0.3,0.4]:
-    #         for i in range(20):
-    #             print(f"{p=}, {m=} {i=}")
-    #             res[f"{p}_{m}_{i}"]=run_3d(m, p)
-    #
-    # with open("res") as f:
-    #     json.dump(res, f)
+    # run_2d_rrt_star_motion_planning()
+    res =dict()
+    for p in [0.05, 0.2]:
+        for m in [0.05, 0.075, 0.1, 0.125, 0.2, 0.25,0.3,0.4]:
+            for i in range(20):
+                print(f"{p=}, {m=} {i=}")
+                res[f"{p}_{m}_{i}"]=run_3d(m, p)
+
+    with open("res") as f:
+        json.dump(res, f)
