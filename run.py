@@ -43,7 +43,7 @@ def run_dot_2d_rrt():
 def run_dot_2d_rrt_star():
     planning_env = MapDotEnvironment(json_file=MAP_DETAILS["json_file"])
     bb = DotBuildingBlocks2D(planning_env)
-    planner = RRTStarPlanner(bb=bb, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"], ext_mode="E1", goal_prob=0.2, k=5, step_size=None)
+    planner = RRTStarPlanner(bb=bb, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"], ext_mode="E1", goal_prob=0.2, k=None, step_size=None)
 
     # execute plan
     plan = planner.plan()
@@ -104,11 +104,11 @@ def run_3d():
     bb = BuildingBlocks3D(transform=transform,
                           ur_params=ur_params,
                           env=env,
-                          resolution=0.1 )
-    #visualizer = Visualize_UR(ur_params, env=env, transform=transform, bb=bb)
+                          resolution=0.1)
+    visualizer = Visualize_UR(ur_params, env=env, transform=transform, bb=bb)
 
     # --------- configurations-------------
-    env2_start = np.deg2rad([110, -70, 90, -90, -90, 0 ])
+    env2_start = np.deg2rad([110,-70, 90, -90, -90, 0])
     env2_goal = np.deg2rad([50, -80, 90, -90, -90, 0 ])
     # ---------------------------------------
 
@@ -284,5 +284,5 @@ if __name__ == "__main__":
     # run_dot_2d_rrt_star()
     # run_2d_rrt_motion_planning()
     # run_2d_rrt_inspection_planning()
-    run_2d_rrt_star_motion_planning()
-    # run_3d()
+    # run_2d_rrt_star_motion_planning()
+    run_3d()

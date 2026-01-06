@@ -33,7 +33,7 @@ class RRTStarPlanner(object):
         self.ext_mode = ext_mode
         self.goal_prob = goal_prob
         self.k = k
-        self.increment=5
+        self.increment=0.1
 
         self.max_step_size = step_size
 
@@ -42,11 +42,17 @@ class RRTStarPlanner(object):
         Compute and return the plan. The function should return a numpy array containing the states (positions) of the robot.
         """
         self.tree.add_vertex(self.start)
-        while not self.tree.is_goal_exists(self.goal):
+        itrs=0
+        while not (self.tree.is_goal_exists(self.goal) and self.stop_on_goal) and itrs <self.max_itr:
             rand_config = self.bb.sample_random_config(self.goal_prob, self.goal)
+            # print(rand_config)
             self.extend(self.tree.get_nearest_config(rand_config)[1], rand_config)
-
-        current = self.tree.get_vertex_for_config(self.goal)
+            itrs+=1
+            print(len(self.tree.vertices))
+        if self.tree.is_goal_exists(self.goal):
+            current = self.tree.get_vertex_for_config(self.goal)
+        else:
+            return []
         plan = [current.config]
         while np.any(current.config != self.start):
             current = self.tree.vertices[self.tree.edges[self.tree.get_idx_for_config(current.config)]]
@@ -70,11 +76,15 @@ class RRTStarPlanner(object):
             self.tree.add_edge(sid, eid, self.bb.compute_distance(x_near, x_rand))
             new_config = x_rand
         else:
-            if self.bb.compute_distance(x_near, self.goal) < self.increment and not self.stop_on_goal:
+            if self.bb.compute_distance(x_near, self.goal) < self.increment:
                 new_config = self.goal
             else:
                 new_config = x_near + ((x_rand - x_near) / self.bb.compute_distance(x_rand, x_near)) * self.increment
-            if not self.bb.config_validity_checker(new_config) or not self.bb.edge_validity_checker(x_near, new_config):
+                if self.bb.compute_distance(new_config, x_rand) > self.max_step_size:
+                    new_config = x_near + ((x_rand - x_near) / self.bb.compute_distance(x_rand, x_near)) * self.max_step_size
+            if not self.bb.config_validity_checker(new_config):
+                return
+            if not self.bb.edge_validity_checker(x_near, new_config):
                 return
 
             eid = self.tree.add_vertex(new_config)
@@ -83,7 +93,7 @@ class RRTStarPlanner(object):
         if self.k is None:
             i = len(self.tree.vertices)
             d = len(new_config)
-            k = (math.log(i)/i)**(1/d)
+            k = min((int((math.log(i)/i)**(1/d)),1))
         else:
             k = min(self.k, len(self.tree.vertices)-1)
         nearest_neighbors_ids, nearest_neighbors_configs = self.tree.get_k_nearest_neighbors(new_config, k=k)

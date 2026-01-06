@@ -50,7 +50,6 @@ class BuildingBlocks3D(object):
         for link_position in spheres.values():
             for sphere in link_position:
                 if sphere[0]>0.4:
-                    print("window")
                     return False
 
         # link link collision
@@ -62,7 +61,6 @@ class BuildingBlocks3D(object):
             for obj_1_sphere in obj_1_spheres:
                 for obj_0_sphere in obj_0_spheres:
                     if math.dist(obj_0_sphere, obj_1_sphere) < obj_0_radius + obj_1_radius:
-                        print("link")
                         return False
         robot = list(self.transform.conf2sphere_coords(conf).items())
         # link obstacle collision
@@ -70,7 +68,6 @@ class BuildingBlocks3D(object):
             for sphere in spheres:
                 for obstacle in self.env.obstacles:
                     if math.dist(sphere, obstacle) < self.env.radius + self.ur_params.sphere_radius[name]:
-                        print("obstacle")
                         return False
         # link floor collision
         for name, spheres in robot:
@@ -78,7 +75,6 @@ class BuildingBlocks3D(object):
                 continue
             for sphere in spheres:
                 if sphere[-1] - self.ur_params.sphere_radius[name] < 0:
-                    print("floor")
                     return False
 
         return True
