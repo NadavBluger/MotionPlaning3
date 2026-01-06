@@ -68,7 +68,7 @@ def run_2d_rrt_star_motion_planning():
             goal_prob=0.2,
             step_size=0.1,
             stop_on_goal=False,
-            k=50
+            k=1000
         )
         # execute plan
         plan, costs = planner.plan()
