@@ -57,7 +57,7 @@ def run_2d_rrt_star_motion_planning():
         "goal": np.array([0.3, 0.15, 1.0, 1.1]),
     }
     costs_results=[]
-    for _ in range(10):
+    for _ in range(1):
         planning_env = MapEnvironment(json_file=MAP_DETAILS["json_file"], task="mp")
         bb = BuildingBlocks2D(planning_env)
         planner = RRTStarPlanner(
@@ -66,9 +66,9 @@ def run_2d_rrt_star_motion_planning():
             goal=MAP_DETAILS["goal"],
             ext_mode="E1",
             goal_prob=0.2,
-            step_size=0.05,
+            step_size=0.1,
             stop_on_goal=False,
-            k=10
+            k=50
         )
         # execute plan
         plan, costs = planner.plan()
@@ -282,10 +282,10 @@ if __name__ == "__main__":
     # dot_tree_figures_all()
     # run_dot_2d_astar()
     # run_dot_2d_rrt()
-    run_dot_2d_rrt_star()
+    # run_dot_2d_rrt_star()
     # run_2d_rrt_motion_planning()
     # run_2d_rrt_inspection_planning()
-    # run_2d_rrt_star_motion_planning()
+    run_2d_rrt_star_motion_planning()
     # res =dict()
     # for p in [0.05, 0.2]:
     #     for m in [0.05, 0.075, 0.1, 0.125, 0.2, 0.25,0.3,0.4]:
