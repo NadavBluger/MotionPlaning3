@@ -62,8 +62,8 @@ class RRTMotionPlanner(object):
             sid = self.tree.get_idx_for_config(near_config)
             self.tree.add_edge(sid, eid, self.bb.compute_distance(near_config, rand_config))
         else:
-            if self.bb.compute_distance(near_config, self.goal)<self.increment:
-                new_config = self.goal
+            if self.bb.compute_distance(near_config, rand_config)<self.increment:
+                new_config = rand_config
             else:
                 new_config = near_config + ((rand_config - near_config) / self.bb.compute_distance(rand_config, near_config))*self.increment
             if not self.bb.config_validity_checker(new_config) or not self.bb.edge_validity_checker(

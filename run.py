@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import os
 import time
@@ -43,10 +45,10 @@ def run_dot_2d_rrt():
 def run_dot_2d_rrt_star():
     planning_env = MapDotEnvironment(json_file=MAP_DETAILS["json_file"])
     bb = DotBuildingBlocks2D(planning_env)
-    planner = RRTStarPlanner(bb=bb, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"], ext_mode="E1", goal_prob=0.2, k=None, step_size=None)
+    planner = RRTStarPlanner(bb=bb, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"], ext_mode="E2", goal_prob=0.2, k=10, step_size=15)
 
     # execute plan
-    plan = planner.plan()
+    plan,_ = planner.plan()
     DotVisualizer(bb).visualize_map(plan=plan, tree_edges=planner.tree.get_edges_as_states(), show_map=True)
 def run_2d_rrt_star_motion_planning():
     MAP_DETAILS = {
@@ -54,18 +56,23 @@ def run_2d_rrt_star_motion_planning():
         "start": np.array([0.78, -0.78, 0.0, 0.0]),
         "goal": np.array([0.3, 0.15, 1.0, 1.1]),
     }
-    planning_env = MapEnvironment(json_file=MAP_DETAILS["json_file"], task="mp")
-    bb = BuildingBlocks2D(planning_env)
-    planner = RRTStarPlanner(
-        bb=bb,
-        start=MAP_DETAILS["start"],
-        goal=MAP_DETAILS["goal"],
-        ext_mode="E2",
-        goal_prob=0.5,
-        step_size=0.1,
-    )
-    # execute plan
-    plan = planner.plan()
+    costs_results=[]
+    for _ in range(10):
+        planning_env = MapEnvironment(json_file=MAP_DETAILS["json_file"], task="mp")
+        bb = BuildingBlocks2D(planning_env)
+        planner = RRTStarPlanner(
+            bb=bb,
+            start=MAP_DETAILS["start"],
+            goal=MAP_DETAILS["goal"],
+            ext_mode="E1",
+            goal_prob=0.2,
+            step_size=0.05,
+            stop_on_goal=False,
+            k=10
+        )
+        # execute plan
+        plan, costs = planner.plan()
+        costs_results.append(costs)
     Visualizer(bb).visualize_plan(plan=plan, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"])
 
 def run_2d_rrt_motion_planning():
@@ -78,25 +85,17 @@ def run_2d_rrt_motion_planning():
     Visualizer(bb).visualize_plan(plan=plan, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"])
 
 def run_2d_rrt_inspection_planning():
-    MAP_DETAILS = {"json_file": "twoD/map_ip.json", "start": np.array([0.78, -0.78, 0.0, 0.0]), "goal": np.array([0.3, 0.15, 1.0, 1.1])}
+    MAP_DETAILS = {"json_file": "twoD/map_ip.json", "start": np.array([0.78, -0.78, 0.0, 0.0]),
+                   "goal": np.array([0.3, 0.15, 1.0, 1.1])}
+    planning_env = MapEnvironment(json_file=MAP_DETAILS["json_file"], task="ip")
+    bb = BuildingBlocks2D(planning_env)
+    planner = RRTInspectionPlanner(bb=bb, start=MAP_DETAILS["start"], ext_mode="E2", goal_prob=0.01, coverage=0.5)
 
     # execute plan
-    times=[]
-    costs = []
-    for i in range(10):
-        planning_env = MapEnvironment(json_file=MAP_DETAILS["json_file"], task="ip")
-        bb = BuildingBlocks2D(planning_env)
-        planner = RRTInspectionPlanner(bb=bb, start=MAP_DETAILS["start"], ext_mode="E2", goal_prob=0.1, coverage=0.75)
-        start_time=time.time()
-        plan = planner.plan()
-        times.append(time.time()-start_time)
-        print(times[i])
-        costs.append(planner.compute_cost(plan))
-    print(sum(times)/len(times))
-    print(sum(costs)/len(costs))
+    plan = planner.plan()
     Visualizer(bb).visualize_plan(plan=plan, start=MAP_DETAILS["start"])
 
-def run_3d():
+def run_3d(max_step_size, p_bias ):
     ur_params = UR5e_PARAMS(inflation_factor=1)
     env = Environment(env_idx=2)
     transform = Transform(ur_params)
@@ -112,18 +111,17 @@ def run_3d():
     env2_goal = np.deg2rad([50, -80, 90, -90, -90, 0 ])
     # ---------------------------------------
 
-    rrt_star_planner = RRTStarPlanner(step_size=0.5,
+    rrt_star_planner = RRTStarPlanner(step_size=max_step_size,
                                       start=env2_start,
                                       goal=env2_goal,
-                                      max_itr=4000,
-                                      stop_on_goal=True,
+                                      max_itr=2000,
+                                      stop_on_goal=False,
                                       bb=bb,
-                                      goal_prob=0.05,
+                                      goal_prob=p_bias,
                                       ext_mode="E2")
+    paths = rrt_star_planner.plan()
 
-    path = rrt_star_planner.plan()
-
-    if path is not None:
+    if paths[-1] is not None:
 
         # create a folder for the experiment
         # Format the time string as desired (YYYY-MM-DD_HH-MM-SS)
@@ -139,13 +137,16 @@ def run_3d():
             os.mkdir(exp_folder_name)
 
         # save the path
-        np.save(os.path.join(exp_folder_name, 'path'), path)
+        np.save(os.path.join(exp_folder_name, 'path'), paths[-1])
 
         # save the cost of the path and time it took to compute
         with open(os.path.join(exp_folder_name, 'stats'), "w") as file:
-            file.write("Path cost: {} \n".format(rrt_star_planner.compute_cost(path)))
+            file.write("Path cost: {} \n".format(rrt_star_planner.compute_cost(paths[-1])))
 
-        visualizer.show_path(path)
+        time.sleep(10)
+        print("showing path")
+        visualizer.show_path(paths[-1])
+        return paths
 
 def run_trials_2d_manipulator(ext_mode, goal_prob, trials=10, k=5, step_size= 5):
     MAP_DETAILS = {
@@ -281,8 +282,16 @@ if __name__ == "__main__":
     # dot_tree_figures_all()
     # run_dot_2d_astar()
     # run_dot_2d_rrt()
-    # run_dot_2d_rrt_star()
+    run_dot_2d_rrt_star()
     # run_2d_rrt_motion_planning()
     # run_2d_rrt_inspection_planning()
     # run_2d_rrt_star_motion_planning()
-    run_3d()
+    # res =dict()
+    # for p in [0.05, 0.2]:
+    #     for m in [0.05, 0.075, 0.1, 0.125, 0.2, 0.25,0.3,0.4]:
+    #         for i in range(20):
+    #             print(f"{p=}, {m=} {i=}")
+    #             res[f"{p}_{m}_{i}"]=run_3d(m, p)
+    #
+    # with open("res") as f:
+    #     json.dump(res, f)
