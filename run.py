@@ -105,7 +105,7 @@ def run_3d(max_step_size, p_bias ):
                           ur_params=ur_params,
                           env=env,
                           resolution=0.1)
-    visualizer = Visualize_UR(ur_params, env=env, transform=transform, bb=bb)
+    #visualizer = Visualize_UR(ur_params, env=env, transform=transform, bb=bb)
 
     # --------- configurations-------------
     env2_start = np.deg2rad([110,-70, 90, -90, -90, 0])
@@ -119,7 +119,8 @@ def run_3d(max_step_size, p_bias ):
                                       stop_on_goal=False,
                                       bb=bb,
                                       goal_prob=p_bias,
-                                      ext_mode="E2")
+                                      ext_mode="E2",
+                                      k=5)
     path = rrt_star_planner.plan()
 
     if path is not None:
@@ -144,9 +145,7 @@ def run_3d(max_step_size, p_bias ):
         with open(os.path.join(exp_folder_name, 'stats'), "w") as file:
             file.write("Path cost: {} \n".format(rrt_star_planner.compute_cost(path)))
 
-        time.sleep(10)
-        print("showing path")
-        visualizer.show_path(path)
+        #visualizer.show_path(path)
         return path
 
 def run_trials_2d_manipulator(ext_mode, goal_prob, trials=10, k=5, step_size= 5):

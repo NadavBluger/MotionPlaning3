@@ -58,11 +58,12 @@ class RRTStarPlanner(object):
             #     costs.append((time.time()-start, cost))
             #     print(costs[-1])
             if itrs %200 ==0:
-                costs.append(self.compute_cost(self.get_path()))
+                if self.tree.is_goal_exists(self.goal):
+                    costs.append(self.compute_cost(self.get_path()))
+                else:
+                    costs.append(None)
         print(time.time()-start)
         print(costs)
-        print(len(self.tree.edges))
-        print(f"{self.rewires=}")
         return self.get_path()
 
     def get_path(self):
@@ -128,7 +129,6 @@ class RRTStarPlanner(object):
                 self.tree.vertices[n_id].set_cost(self.tree.vertices[pp_id].cost+c)
                 self.propagate_cost_to_children(n_id)
                 self.rewires +=1
-                print("rewire")
 
     def propagate_cost_to_children(self, parent_id):
         for child_id, pid in self.tree.edges.items():
