@@ -64,11 +64,11 @@ def run_2d_rrt_star_motion_planning():
             bb=bb,
             start=MAP_DETAILS["start"],
             goal=MAP_DETAILS["goal"],
-            ext_mode="E1",
-            goal_prob=0.2,
+            ext_mode="E2",
+            goal_prob=0.5,
             step_size=0.1,
             stop_on_goal=False,
-            k=1000
+            k=10
         )
         # execute plan
         plan, costs = planner.plan()

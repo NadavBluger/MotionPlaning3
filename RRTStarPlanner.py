@@ -128,11 +128,12 @@ class RRTStarPlanner(object):
                 self.tree.vertices[n_id].set_cost(self.tree.vertices[pp_id].cost+c)
                 self.propagate_cost_to_children(n_id)
                 self.rewires +=1
+                print(self.compute_cost(self.get_path()))
 
     def propagate_cost_to_children(self, parent_id):
         for child_id, pid in self.tree.edges.items():
             if pid == parent_id:
-                print(child_id, pid, parent_id)
+                #print(child_id, pid, parent_id)
                 dist = self.bb.compute_distance(self.tree.vertices[parent_id].config, self.tree.vertices[child_id].config)
                 self.tree.vertices[child_id].set_cost(self.tree.vertices[parent_id].cost + dist)
                 self.propagate_cost_to_children(child_id)
