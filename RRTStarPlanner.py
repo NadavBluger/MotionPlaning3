@@ -47,8 +47,10 @@ class RRTStarPlanner(object):
         costs = []
         start = time.time()
         while not (self.tree.is_goal_exists(self.goal) and self.stop_on_goal) and itrs<self.max_itr:
-            rand_config = self.bb.sample_random_config(self.goal_prob, self.goal)
-            # print(rand_config)
+            if self.tree.is_goal_exists(self.goal):
+                rand_config = self.bb.sample_random_config(0, self.goal)
+            else:
+                rand_config = self.bb.sample_random_config(self.goal_prob, self.goal)
             extended = self.extend(self.tree.get_nearest_config(rand_config)[1], rand_config)
             if extended:
                 self.fix_graph(*extended)

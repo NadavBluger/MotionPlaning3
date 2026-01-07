@@ -71,7 +71,7 @@ class Visualize_UR(object):
             global_sphere_coords = self.transform.conf2sphere_coords(conf)
             self.draw_spheres(global_sphere_coords,  track_end_effector=True)
             self.show()
-            time.sleep(0.3)
+            plt.pause(0.3)
             if i < len(path) - 1:
                 self.ax.axes.clear()
         plt.ioff()

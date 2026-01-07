@@ -122,7 +122,7 @@ def run_3d(max_step_size, p_bias ):
                                       ext_mode="E2",
                                       k=5)
     path, costs = rrt_star_planner.plan()
-
+    print(rrt_star_planner.compute_cost(path))
     if path is not None:
 
         # create a folder for the experiment
@@ -144,7 +144,7 @@ def run_3d(max_step_size, p_bias ):
         # save the cost of the path and time it took to compute
         with open(os.path.join(exp_folder_name, 'stats'), "w") as file:
             file.write("Path cost: {} \n".format(rrt_star_planner.compute_cost(path)))
-
+        print("showing path")
         visualizer.show_path(path)
         return path
 
@@ -156,8 +156,6 @@ if __name__ == "__main__":
     # run_2d_rrt_motion_planning()
     # run_2d_rrt_inspection_planning()
     # run_2d_rrt_star_motion_planning()
-    run_3d(0.1, 0.2)
-    exit()
     res =dict()
     for p in [0.05, 0.2]:
         for m in [0.1, 0.125, 0.2, 0.25, 0.3, 0.4]:
