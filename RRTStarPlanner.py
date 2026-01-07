@@ -48,7 +48,7 @@ class RRTStarPlanner(object):
         cost=inf
         start = time.time()
         #while not (self.tree.is_goal_exists(self.goal) and self.stop_on_goal) and itrs <self.max_itr:
-        while not (self.tree.is_goal_exists(self.goal) and self.stop_on_goal) and time.time()-start < 30.5:
+        while not (self.tree.is_goal_exists(self.goal) and self.stop_on_goal) and time.time()-start < 300000.5:
             rand_config = self.bb.sample_random_config(self.goal_prob, self.goal)
             # print(rand_config)
             self.extend(self.tree.get_nearest_config(rand_config)[1], rand_config)
@@ -108,8 +108,10 @@ class RRTStarPlanner(object):
         if self.k is None:
             i = len(self.tree.vertices)
             d = len(new_config)
-            k = (5*d*int((math.log(i)/i)**(1/d)))
+            # k = e^(1+1/d)*log i
+            k = int(math.exp(1+1/d)*math.log(i))
             k = k if k > 1 else 1
+            k = min(k, len(self.tree.vertices) - 1)
         else:
             k = min(self.k, len(self.tree.vertices)-1)
         nearest_neighbors_ids, _ = self.tree.get_k_nearest_neighbors(new_config, k=k)
