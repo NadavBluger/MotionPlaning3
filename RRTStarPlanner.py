@@ -17,7 +17,7 @@ class RRTStarPlanner(object):
         max_step_size,
         start,
         goal,
-        max_itr=2000,
+        max_itr=5000,
         stop_on_goal=None,
         k=None,
         goal_prob=0.01,
@@ -45,6 +45,8 @@ class RRTStarPlanner(object):
         """
         self.tree.add_vertex(self.start)
         itrs=0
+        costs = []
+        cost = math.inf
         while itrs < self.max_itr:
             goal_prob=0 if self.tree.is_goal_exists(self.goal) else self.goal_prob
             rand_config = self.bb.sample_random_config(goal_prob, self.goal)
@@ -52,15 +54,15 @@ class RRTStarPlanner(object):
             if self.bb.config_validity_checker(rand_config) and self.bb.edge_validity_checker(nearest_config, rand_config):
                 new_config = self.extend(nearest_config, rand_config)
                 eid = self.tree.add_vertex(new_config)
-                new_cost = self.bb.compute_distance(nearest_config, rand_config) + self.tree.vertices[sid].cost
+                new_cost = self.bb.compute_distance(nearest_config, new_config) + self.tree.vertices[sid].cost
                 self.tree.add_edge(sid, eid, new_cost)
 
 
                 nearest_neighbors, _ = self.tree.get_k_nearest_neighbors(new_config, self.get_k())
 
                 #Parent rewire
+                potential_parents= []
                 for nearest_neighbor in nearest_neighbors:
-                    potential_parents= []
                     if self.bb.edge_validity_checker(new_config, self.tree.vertices[nearest_neighbor].config):
                         new_cost = self.bb.compute_distance(new_config, self.tree.vertices[nearest_neighbor].config) + self.tree.vertices[nearest_neighbor].cost
                         potential_parents.append((nearest_neighbor,new_cost))
@@ -72,8 +74,8 @@ class RRTStarPlanner(object):
                         self.tree.edges[eid] = new_parent[0]
 
                 #Child rewire
+                potential_children = []
                 for nearest_neighbor in nearest_neighbors:
-                    potential_children = []
                     if self.bb.edge_validity_checker(new_config, self.tree.vertices[nearest_neighbor].config):
                         new_cost = self.bb.compute_distance(new_config, self.tree.vertices[nearest_neighbor].config) + \
                                    self.tree.vertices[eid].cost
@@ -85,6 +87,14 @@ class RRTStarPlanner(object):
                         self.tree.vertices[new_child[0]].cost = new_child[1]
                         self.tree.edges[new_child] = eid
             itrs +=1
+            # if self.tree.is_goal_exists(self.goal) and self.compute_cost(self.get_path()) < cost:
+            #     cost = self.compute_cost(self.get_path())
+            #     costs.append((itrs, cost))
+            #     print(costs[-1])
+            if itrs%200==0:
+                cost =self.compute_cost(self.get_path())
+                costs.append((itrs, cost))
+                print(costs[-1])
         return self.get_path()
 
     def get_path(self):

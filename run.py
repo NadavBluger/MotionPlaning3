@@ -57,7 +57,7 @@ def run_2d_rrt_star_motion_planning():
         "goal": np.array([0.3, 0.15, 1.0, 1.1]),
     }
     costs_results=[]
-    for _ in range(1):
+    for _ in range(10):
         planning_env = MapEnvironment(json_file=MAP_DETAILS["json_file"], task="mp")
         bb = BuildingBlocks2D(planning_env)
         planner = RRTStarPlanner(
@@ -65,15 +65,18 @@ def run_2d_rrt_star_motion_planning():
             start=MAP_DETAILS["start"],
             goal=MAP_DETAILS["goal"],
             ext_mode="E2",
-            goal_prob=0.5,
-            step_size=0.1,
+            goal_prob=0.2,
+            max_step_size=1,
             stop_on_goal=False,
-            k=10
+            k=None
         )
         # execute plan
-        plan, costs = planner.plan()
-        costs_results.append(costs)
-    Visualizer(bb).visualize_plan(plan=plan, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"])
+        plan= planner.plan()
+        print(plan)
+        print(planner.compute_cost(plan))
+        #costs_results.append(costs)
+        if len(plan):
+            Visualizer(bb).visualize_plan(plan=plan, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"])
 
 def run_2d_rrt_motion_planning():
     MAP_DETAILS = {"json_file": "twoD/map_mp.json", "start": np.array([0.78, -0.78, 0.0, 0.0]), "goal": np.array([0.3, 0.15, 1.0, 1.1])}
@@ -111,7 +114,7 @@ def run_3d(max_step_size, p_bias ):
     env2_goal = np.deg2rad([50, -80, 90, -90, -90, 0 ])
     # ---------------------------------------
 
-    rrt_star_planner = RRTStarPlanner(step_size=max_step_size,
+    rrt_star_planner = RRTStarPlanner(max_step_size=max_step_size,
                                       start=env2_start,
                                       goal=env2_goal,
                                       max_itr=2000,
@@ -121,7 +124,7 @@ def run_3d(max_step_size, p_bias ):
                                       ext_mode="E2")
     paths = rrt_star_planner.plan()
 
-    if paths[-1] is not None:
+    if paths is not None:
 
         # create a folder for the experiment
         # Format the time string as desired (YYYY-MM-DD_HH-MM-SS)
@@ -248,7 +251,7 @@ def visualize_representatives_2d_manipulator():
                 step_size=0.1,
                 start=MAP_DETAILS["start"],
                 goal=MAP_DETAILS["goal"],
-                max_itr=20000,
+                max_itr=2000,
                 stop_on_goal=True,
                 k=5,
                 goal_prob=goal_prob,
@@ -282,16 +285,16 @@ if __name__ == "__main__":
     # dot_tree_figures_all()
     # run_dot_2d_astar()
     # run_dot_2d_rrt()
-    run_dot_2d_rrt_star()
+    # run_dot_2d_rrt_star()
     # run_2d_rrt_motion_planning()
     # run_2d_rrt_inspection_planning()
-    # run_2d_rrt_star_motion_planning()
-    # res =dict()
-    # for p in [0.05, 0.2]:
-    #     for m in [0.05, 0.075, 0.1, 0.125, 0.2, 0.25,0.3,0.4]:
-    #         for i in range(20):
-    #             print(f"{p=}, {m=} {i=}")
-    #             res[f"{p}_{m}_{i}"]=run_3d(m, p)
-    #
-    # with open("res") as f:
-    #     json.dump(res, f)
+    #run_2d_rrt_star_motion_planning()
+    res =dict()
+    for p in [0.05, 0.2]:
+        for m in [0.05, 0.075, 0.1, 0.125, 0.2, 0.25,0.3,0.4]:
+            for i in range(20):
+                print(f"{p=}, {m=} {i=}")
+                res[f"{p}_{m}_{i}"]=run_3d(m, p)
+
+    with open("res") as f:
+        json.dump(res, f)

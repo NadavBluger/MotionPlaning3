@@ -88,7 +88,7 @@ class BuildingBlocks3D(object):
         #length = self.compute_distance(current_conf, prev_conf)
         length = np.linalg.norm(current_conf - prev_conf)
         amount = max(int(length / self.resolution), 2)
-        current = prev_conf
+        current = prev_conf.copy()
         increment = (current_conf - prev_conf) / amount
         for i in range(amount + 1):
             if self.config_validity_checker(current):
