@@ -67,7 +67,7 @@ class BuildingBlocks3D(object):
         for name, spheres in robot:
             for sphere in spheres:
                 for obstacle in self.env.obstacles:
-                    if np.sum((sphere - obstacle) ** 2) < (self.env.radius + self.ur_params.sphere_radius[name]**2):
+                    if np.sum((sphere - obstacle) ** 2) < ((self.env.radius + self.ur_params.sphere_radius[name])**2):
                         return False
         # link floor collision
         for name, spheres in robot:
