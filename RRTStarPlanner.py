@@ -95,7 +95,7 @@ class RRTStarPlanner(object):
                 cost =self.compute_cost(self.get_path())
                 costs.append((itrs, cost))
                 print(costs[-1])
-        return self.get_path()
+        return self.get_path(), costs
 
     def get_path(self):
         if not self.tree.is_goal_exists(self.goal):

@@ -122,7 +122,7 @@ def run_3d(max_step_size, p_bias ):
                                       bb=bb,
                                       goal_prob=p_bias,
                                       ext_mode="E2")
-    paths = rrt_star_planner.plan()
+    paths, costs = rrt_star_planner.plan()
 
     if paths is not None:
 
@@ -141,6 +141,8 @@ def run_3d(max_step_size, p_bias ):
 
         # save the path
         np.save(os.path.join(exp_folder_name, 'path'), paths)
+        np.save(os.path.join(exp_folder_name, 'costs'), costs)
+
 
         # save the cost of the path and time it took to compute
         with open(os.path.join(exp_folder_name, 'stats'), "w") as file:
