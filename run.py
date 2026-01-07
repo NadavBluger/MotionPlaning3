@@ -140,15 +140,15 @@ def run_3d(max_step_size, p_bias ):
             os.mkdir(exp_folder_name)
 
         # save the path
-        np.save(os.path.join(exp_folder_name, 'path'), paths[-1])
+        np.save(os.path.join(exp_folder_name, 'path'), paths)
 
         # save the cost of the path and time it took to compute
         with open(os.path.join(exp_folder_name, 'stats'), "w") as file:
-            file.write("Path cost: {} \n".format(rrt_star_planner.compute_cost(paths[-1])))
+            file.write("Path cost: {} \n".format(rrt_star_planner.compute_cost(paths)))
 
         time.sleep(10)
         print("showing path")
-        visualizer.show_path(paths[-1])
+        visualizer.show_path(paths)
         return paths
 
 def run_trials_2d_manipulator(ext_mode, goal_prob, trials=10, k=5, step_size= 5):
