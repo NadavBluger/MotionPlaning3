@@ -132,7 +132,7 @@ class RRTStarPlanner(object):
             if self.bb.edge_validity_checker(pp, n):
                 self.tree.edges[n_id] = pp_id
                 self.tree.vertices[n_id].set_cost(self.tree.vertices[pp_id].cost+c)
-                self.propagate_cost_to_children(n_id)
+                #self.propagate_cost_to_children(n_id)
                 self.rewires +=1
 
     def propagate_cost_to_children(self, parent_id):
