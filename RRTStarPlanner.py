@@ -9,16 +9,16 @@ import time
 class RRTStarPlanner(object):
 
     def __init__(
-        self,
-        bb,
-        ext_mode,
-        step_size,
-        start,
-        goal,
-        max_itr=4000,
-        stop_on_goal=False,
-        k=None,
-        goal_prob=0.01,
+            self,
+            bb,
+            ext_mode,
+            step_size,
+            start,
+            goal,
+            max_itr=4000,
+            stop_on_goal=False,
+            k=None,
+            goal_prob=0.01,
     ):
 
         # set environment and search tree
@@ -45,26 +45,24 @@ class RRTStarPlanner(object):
         self.tree.add_vertex(self.start)
         itrs=0
         costs = []
-        cost=inf
         start = time.time()
-        #while not (self.tree.is_goal_exists(self.goal) and self.stop_on_goal) and itrs <self.max_itr:
         while not (self.tree.is_goal_exists(self.goal) and self.stop_on_goal) and itrs<self.max_itr:
             rand_config = self.bb.sample_random_config(self.goal_prob, self.goal)
             # print(rand_config)
-            self.extend(self.tree.get_nearest_config(rand_config)[1], rand_config)
+            extended = self.extend(self.tree.get_nearest_config(rand_config)[1], rand_config)
+            if extended:
+                self.fix_graph(*extended)
             itrs+=1
-            # if self.tree.is_goal_exists(self.goal) and self.compute_cost(self.get_path()) <cost:
-            #     cost = self.compute_cost(self.get_path())
-            #     costs.append((time.time()-start, cost))
-            #     print(costs[-1])
             if itrs %200 ==0:
+                print(itrs)
                 if self.tree.is_goal_exists(self.goal):
                     costs.append(self.compute_cost(self.get_path()))
                 else:
                     costs.append(None)
         print(time.time()-start)
         print(costs)
-        return self.get_path()
+        print(len(self.tree.vertices))
+        return self.get_path(), costs
 
     def get_path(self):
         if self.tree.is_goal_exists(self.goal):
@@ -103,21 +101,28 @@ class RRTStarPlanner(object):
             if not self.bb.edge_validity_checker(x_near, new_config):
                 return
 
-            eid = self.tree.add_vertex(new_config)
+            eid = self.tree.add_vertex(np.array(new_config))
             sid = self.tree.get_idx_for_config(x_near)
             self.tree.add_edge(sid, eid, self.bb.compute_distance(new_config, x_near))
+        return np.array(new_config), eid
+
+    def fix_graph(self, new_config, new_vertex_id):
+        nearest_neighbors_ids, _ = self.tree.get_k_nearest_neighbors(new_config, k=self.get_k())
+        for parent_id in nearest_neighbors_ids:
+            self.rewire(parent_id, new_vertex_id)
+        for parent_id in nearest_neighbors_ids:
+            self.rewire(new_vertex_id, parent_id)
+
+    def get_k(self):
+        # k = e^(1+1/d)*log i
         if self.k is None:
             i = len(self.tree.vertices)
-            d = len(new_config)
+            d = len(self.goal)
             k = (5*d*int((math.log(i)/i)**(1/d)))
             k = k if k > 1 else 1
         else:
             k = min(self.k, len(self.tree.vertices)-1)
-        nearest_neighbors_ids, _ = self.tree.get_k_nearest_neighbors(new_config, k=k)
-        for parent_id in nearest_neighbors_ids:
-            self.rewire(parent_id, eid)
-        for parent_id in nearest_neighbors_ids:
-            self.rewire(eid, parent_id)
+        return k
 
     def rewire(self, pp_id, n_id):
         pp = self.tree.vertices[pp_id].config
@@ -133,6 +138,7 @@ class RRTStarPlanner(object):
     def propagate_cost_to_children(self, parent_id):
         for child_id, pid in self.tree.edges.items():
             if pid == parent_id:
+                og = self.tree.vertices[child_id].cost
                 dist = self.bb.compute_distance(self.tree.vertices[parent_id].config, self.tree.vertices[child_id].config)
                 self.tree.vertices[child_id].set_cost(self.tree.vertices[parent_id].cost + dist)
                 self.propagate_cost_to_children(child_id)

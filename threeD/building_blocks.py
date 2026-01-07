@@ -39,7 +39,7 @@ class BuildingBlocks3D(object):
         """
         if random.random() < goal_prob:
             return goal_conf
-        return [random.uniform(limit[0], limit[1]) for limit in self.ur_params.mechamical_limits.values()]
+        return np.array([random.uniform(limit[0], limit[1]) for limit in self.ur_params.mechamical_limits.values()])
 
     def config_validity_checker(self, conf) -> bool:
         """check for collision in given configuration, arm-arm and arm-obstacle
