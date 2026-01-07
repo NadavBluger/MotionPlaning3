@@ -63,19 +63,31 @@ class Visualize_UR(object):
             self.end_effector_pos =np.vstack((self.end_effector_pos, np.append(global_sphere_coords['wrist_3_link'][-1], 1)))
             self.ax.scatter(self.end_effector_pos[:,0], self.end_effector_pos[:,1], self.end_effector_pos[:,2])
     
-    def show_path(self, path):
+    def show_path(self, path, gif_path=None):
         '''
         Plots the path
         '''
-        for i, conf in enumerate(path):
-            global_sphere_coords = self.transform.conf2sphere_coords(conf)
-            self.draw_spheres(global_sphere_coords,  track_end_effector=True)
-            self.show()
-            plt.pause(0.3)
-            if i < len(path) - 1:
-                self.ax.axes.clear()
-        plt.ioff()
-        plt.show()
+        if gif_path:
+            from matplotlib.animation import FuncAnimation
+            def update(i):
+                self.ax.clear()
+                conf = path[i]
+                global_sphere_coords = self.transform.conf2sphere_coords(conf)
+                self.draw_spheres(global_sphere_coords, track_end_effector=True)
+                self.show()
+            
+            anim = FuncAnimation(self.fig, update, frames=len(path), interval=300)
+            anim.save(gif_path, writer='pillow')
+        else:
+            for i, conf in enumerate(path):
+                global_sphere_coords = self.transform.conf2sphere_coords(conf)
+                self.draw_spheres(global_sphere_coords,  track_end_effector=True)
+                self.show()
+                plt.pause(0.3)
+                if i < len(path) - 1:
+                    self.ax.axes.clear()
+            plt.ioff()
+            plt.show()
     
     def show_conf(self, conf:np.array):
         '''

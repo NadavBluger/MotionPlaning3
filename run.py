@@ -107,7 +107,7 @@ def run_3d(max_step_size, p_bias ):
                           ur_params=ur_params,
                           env=env,
                           resolution=0.1)
-    visualizer = Visualize_UR(ur_params, env=env, transform=transform, bb=bb)
+    #visualizer = Visualize_UR(ur_params, env=env, transform=transform, bb=bb)
 
     # --------- configurations-------------
     env2_start = np.deg2rad([110,-70, 90, -90, -90, 0])
@@ -148,9 +148,9 @@ def run_3d(max_step_size, p_bias ):
         with open(os.path.join(exp_folder_name, 'stats'), "w") as file:
             file.write("Path cost: {} \n".format(rrt_star_planner.compute_cost(paths)))
 
-        time.sleep(10)
-        print("showing path")
-        visualizer.show_path(paths)
+        #time.sleep(10)
+        #print("showing path")
+        #visualizer.show_path(paths)
         return paths
 
 def run_trials_2d_manipulator(ext_mode, goal_prob, trials=10, k=5, step_size= 5):
@@ -283,6 +283,105 @@ def dot_tree_figures_all():
                 tree_edges=planner.tree.get_edges_as_states(),
                 show_map=True
             )
+
+def get_best_exp_dir():
+    """
+    Iterates through the 'exps' directory, reads 'stats' files, and returns the
+    directory path that contains the smallest non-zero path cost.
+    """
+    exps_folder_name = os.path.join(os.getcwd(), "exps")
+    if not os.path.exists(exps_folder_name):
+        return None
+
+    min_cost = float('inf')
+    best_dir = None
+    for dirname in os.listdir(exps_folder_name):
+        dir_path = os.path.join(exps_folder_name, dirname)
+        if os.path.isdir(dir_path):
+            stats_path = os.path.join(dir_path, "stats")
+            if os.path.exists(stats_path):
+                with open(stats_path, "r") as f:
+                    content = f.read()
+                    if "Path cost:" in content:
+                        try:
+                            cost = float(content.split("Path cost:")[1].strip())
+                            if cost > 0 and cost < min_cost:
+                                min_cost = cost
+                                best_dir = dir_path
+                        except ValueError:
+                            pass
+    return best_dir
+
+def plot_results():
+    """
+    Parses the 'exps' directory and generates Cost vs Iteration and Success Rate vs Iteration
+    graphs for each p_bias value, comparing different max_step_sizes.
+    """
+    exps_folder = os.path.join(os.getcwd(), "exps")
+    if not os.path.exists(exps_folder):
+        print("No 'exps' folder found.")
+        return
+
+    # Structure: results[p_bias][max_step_size] = list of numpy arrays (costs)
+    results = {}
+
+    for dirname in os.listdir(exps_folder):
+        dir_path = os.path.join(exps_folder, dirname)
+        if not os.path.isdir(dir_path):
+            continue
+        
+        try:
+            parts = dirname.split('_')
+            # Format: exp_pbias_<val>_max_step_size_<val>_<timestamp>
+            if 'pbias' in parts and 'size' in parts:
+                p_bias = float(parts[parts.index('pbias') + 1])
+                max_step_size = float(parts[parts.index('size') + 1])
+                
+                costs_path = os.path.join(dir_path, 'costs.npy')
+                if os.path.exists(costs_path):
+                    # Load (N, 2) array: [[iteration, cost], ...]
+                    costs_data = np.load(costs_path, allow_pickle=True)
+                    
+                    if p_bias not in results:
+                        results[p_bias] = {}
+                    if max_step_size not in results[p_bias]:
+                        results[p_bias][max_step_size] = []
+                    results[p_bias][max_step_size].append(costs_data)
+        except Exception:
+            continue
+
+    # Generate Plots
+    for p_bias in sorted(results.keys()):
+        fig_cost, ax_cost = plt.subplots(figsize=(10, 5))
+        fig_succ, ax_succ = plt.subplots(figsize=(10, 5))
+        
+        for step_size in sorted(results[p_bias].keys()):
+            runs = results[p_bias][step_size]
+            if not runs: continue
+            
+            # Get all unique iteration checkpoints
+            iterations = sorted(list(set(row[0] for run in runs for row in run)))
+            avg_costs, success_rates = [], []
+            
+            for it in iterations:
+                # Extract cost at this iteration for each run if it exists
+                costs_at_it = [run[run[:, 0] == it][0, 1] for run in runs if run[run[:, 0] == it].size > 0]
+                # Filter for valid paths (cost > 0)
+                valid_costs = [c for c in costs_at_it if c is not None and c > 0]
+                
+                success_rates.append(len(valid_costs) / len(runs) * 100)
+                avg_costs.append(np.mean(valid_costs) if valid_costs else np.nan)
+            
+            ax_cost.plot(iterations, avg_costs, marker='.', label=f'Step Size {step_size}')
+            ax_succ.plot(iterations, success_rates, marker='.', label=f'Step Size {step_size}')
+        
+        for ax, title in zip([ax_cost, ax_succ], ["Cost", "Success Rate"]):
+            ax.set_title(f"{title} vs Iteration (p_bias={p_bias})")
+            ax.set_xlabel("Iteration")
+            ax.set_ylabel(f"Average {title}" if title == "Cost" else "Success Rate (%)")
+            ax.legend(); ax.grid(True)
+        plt.show()
+
 if __name__ == "__main__":
     # dot_tree_figures_all()
     # run_dot_2d_astar()
@@ -291,12 +390,25 @@ if __name__ == "__main__":
     # run_2d_rrt_motion_planning()
     # run_2d_rrt_inspection_planning()
     #run_2d_rrt_star_motion_planning()
-    res =dict()
-    for p in [0.05, 0.2]:
-        for m in [0.05, 0.075, 0.1, 0.125, 0.2, 0.25,0.3,0.4]:
-            for i in range(20):
-                print(f"{p=}, {m=} {i=}")
-                res[f"{p}_{m}_{i}"]=run_3d(m, p)
-
-    with open("res") as f:
-        json.dump(res, f)
+    # res =dict()
+    # for p in [+0.2]:
+    #     for m in [0.05, 0.075, 0.1, 0.125, 0.2,0.25,0.3,0.4]:
+    #         for i in range(20):
+    #             print(f"{p=}, {m=} {i=}")
+    #             res[f"{p}_{m}_{i}"]=run_3d(m, p)
+    #
+    # with open("res") as f:
+    #     json.dump(res, f)
+    # dir = r"C:\Users\nblug\Documents\Technion\RoboticMotionPlaning\MotionPlaning3\exps\exp_pbias_0.2_max_step_size_0.075_2026-01-07_18-45-56"
+    # ur_params = UR5e_PARAMS(inflation_factor=1)
+    # env = Environment(env_idx=2)
+    # transform = Transform(ur_params)
+    #
+    # bb = BuildingBlocks3D(transform=transform,
+    #                       ur_params=ur_params,
+    #                       env=env,
+    #                       resolution=0.1)
+    # visualizer = Visualize_UR(ur_params, env=env, transform=transform, bb=bb)
+    # path = np.load(f"{dir}\path.npy")
+    # visualizer.show_path(path, gif_path="animation.gif")
+    plot_results()

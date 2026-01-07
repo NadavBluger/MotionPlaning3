@@ -116,10 +116,10 @@ class RRTStarPlanner(object):
 
     def extend(self, x_near, x_rand):
         if self.bb.compute_distance(x_near, x_rand) < self.max_step_size:
-            return x_rand
+            new_conf = x_rand
         else:
-            return x_near + ((x_rand-x_near)/self.bb.compute_distance(x_near, x_rand)) * self.max_step_size
-
+            new_conf = x_near + ((x_rand-x_near)/self.bb.compute_distance(x_near, x_rand)) * self.max_step_size
+        return np.array(new_conf)
     def get_k(self):
         if self.k:
             return  min(self.k, len(self.tree.vertices)-1)

@@ -13,6 +13,7 @@ class BuildingBlocks3D(object):
         self.ur_params = ur_params
         self.env = env
         self.resolution = resolution
+        self.obstacles_np = np.array(self.env.obstacles)
         
         self.cost_weights = np.array([0.4, 0.3, 0.2, 0.1, 0.07, 0.05])
 
@@ -47,35 +48,43 @@ class BuildingBlocks3D(object):
         @param conf - some configuration
         """
         spheres = self.transform.conf2sphere_coords(conf)
-        for link_position in spheres.values():
-            for sphere in link_position:
-                if sphere[0]>0.4:
-                    return False
+        
+        # Convert to numpy arrays and check x > 0.4 constraint
+        spheres_arrays = {}
+        for name, link_spheres in spheres.items():
+            S = np.array(link_spheres)
+            if np.any(S[:, 0] > 0.4):
+                return False
+            spheres_arrays[name] = S
 
         # link link collision
         for plc in self.possible_link_collisions:
-            obj_0_spheres = spheres[plc[0]]
-            obj_0_radius = self.ur_params.sphere_radius[plc[0]]
-            obj_1_spheres = spheres[plc[1]]
-            obj_1_radius = self.ur_params.sphere_radius[plc[1]]
-            for obj_1_sphere in obj_1_spheres:
-                for obj_0_sphere in obj_0_spheres:
-                    if math.dist(obj_0_sphere, obj_1_sphere) < obj_0_radius + obj_1_radius:
-                        return False
-        robot = list(spheres.items())
+            name1, name2 = plc
+            S1 = spheres_arrays[name1]
+            S2 = spheres_arrays[name2]
+            r1 = self.ur_params.sphere_radius[name1]
+            r2 = self.ur_params.sphere_radius[name2]
+            
+            # Vectorized distance check
+            dists_sq = np.sum((S1[:, None, :] - S2[None, :, :]) ** 2, axis=-1)
+            if np.any(dists_sq < (r1 + r2) ** 2):
+                return False
+
         # link obstacle collision
-        for name, spheres in robot:
-            for sphere in spheres:
-                for obstacle in self.env.obstacles:
-                    if np.sum((sphere - obstacle) ** 2) < ((self.env.radius + self.ur_params.sphere_radius[name])**2):
-                        return False
+        if len(self.obstacles_np) > 0:
+            obs_r = self.env.radius
+            for name, S in spheres_arrays.items():
+                r = self.ur_params.sphere_radius[name]
+                dists_sq = np.sum((S[:, None, :] - self.obstacles_np[None, :, :]) ** 2, axis=-1)
+                if np.any(dists_sq < (obs_r + r) ** 2):
+                    return False
+
         # link floor collision
-        for name, spheres in robot:
+        for name, S in spheres_arrays.items():
             if name == "shoulder_link":
                 continue
-            for sphere in spheres:
-                if sphere[-1] - self.ur_params.sphere_radius[name] < 0:
-                    return False
+            if np.any(S[:, 2] < self.ur_params.sphere_radius[name]):
+                return False
 
         return True
 
