@@ -45,10 +45,10 @@ def run_dot_2d_rrt():
 def run_dot_2d_rrt_star():
     planning_env = MapDotEnvironment(json_file=MAP_DETAILS["json_file"])
     bb = DotBuildingBlocks2D(planning_env)
-    planner = RRTStarPlanner(bb=bb, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"], ext_mode="E2", goal_prob=0.2, k=None, step_size=15)
+    planner = RRTStarPlanner(bb=bb, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"], ext_mode="E2", goal_prob=0.2, k=None, max_step_size=15)
 
     # execute plan
-    plan,_ = planner.plan()
+    plan = planner.plan()
     DotVisualizer(bb).visualize_map(plan=plan, tree_edges=planner.tree.get_edges_as_states(), show_map=True)
 def run_2d_rrt_star_motion_planning():
     MAP_DETAILS = {
@@ -282,10 +282,10 @@ if __name__ == "__main__":
     # dot_tree_figures_all()
     # run_dot_2d_astar()
     # run_dot_2d_rrt()
-    # run_dot_2d_rrt_star()
+    run_dot_2d_rrt_star()
     # run_2d_rrt_motion_planning()
     # run_2d_rrt_inspection_planning()
-    run_2d_rrt_star_motion_planning()
+    # run_2d_rrt_star_motion_planning()
     # res =dict()
     # for p in [0.05, 0.2]:
     #     for m in [0.05, 0.075, 0.1, 0.125, 0.2, 0.25,0.3,0.4]:
