@@ -48,9 +48,9 @@ def run_dot_2d_rrt_star():
     planner = RRTStarPlanner(bb=bb, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"], ext_mode="E2", goal_prob=0.2, k=None, max_step_size=15)
 
     # execute plan
-    plan = planner.plan()
+    plan, _ = planner.plan()
     DotVisualizer(bb).visualize_map(plan=plan, tree_edges=planner.tree.get_edges_as_states(), show_map=True)
-def run_2d_rrt_star_motion_planning():
+def run_2d_rrt_star_motion_planning(i):
     MAP_DETAILS = {
         "json_file": "twoD/map_mp.json",
         "start": np.array([0.78, -0.78, 0.0, 0.0]),
@@ -65,18 +65,20 @@ def run_2d_rrt_star_motion_planning():
             start=MAP_DETAILS["start"],
             goal=MAP_DETAILS["goal"],
             ext_mode="E2",
-            goal_prob=0.2,
-            max_step_size=1,
+            goal_prob=i,
+            max_step_size=0.1,
             stop_on_goal=False,
             k=None
         )
         # execute plan
-        plan= planner.plan()
+        plan, costs = planner.plan()
         print(plan)
         print(planner.compute_cost(plan))
-        #costs_results.append(costs)
-        if len(plan):
-            Visualizer(bb).visualize_plan(plan=plan, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"])
+        costs_results.append(costs)
+    if len(plan):
+        Visualizer(bb).visualize_plan(plan=plan, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"])
+    with open(f"costs_{i}", mode='w')as f:
+        f.write(json.dumps(costs_results))
 
 def run_2d_rrt_motion_planning():
     MAP_DETAILS = {"json_file": "twoD/map_mp.json", "start": np.array([0.78, -0.78, 0.0, 0.0]), "goal": np.array([0.3, 0.15, 1.0, 1.1])}
@@ -382,6 +384,53 @@ def plot_results():
             ax.legend(); ax.grid(True)
         plt.show()
 
+def plot_cost_vs_time_from_files():
+    """
+    Reads costs_0.05 and costs_0.2 files and plots Cost vs Time.
+    """
+    for bias in [0.05, 0.2]:
+        filename = f"costs_{bias}"
+        if not os.path.exists(filename):
+            print(f"File {filename} not found.")
+            continue
+        
+        with open(filename, 'r') as f:
+            try:
+                data = json.load(f)
+            except json.JSONDecodeError:
+                print(f"Error decoding JSON from {filename}")
+                continue
+        
+        plt.figure(figsize=(10, 6))
+        for i, run in enumerate(data):
+            if not run:
+                continue
+            run_arr = np.array(run)
+            # run_arr is (N, 2) -> time, cost
+            plt.plot(run_arr[:, 0], run_arr[:, 1], marker='.', label=f'Run {i+1}')
+        
+        plt.xlabel("Time (s)")
+        plt.ylabel("Cost")
+        plt.title(f"Cost vs Time (Goal Bias {int(bias*100)}%)")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+def visualize_representative_2d_final():
+    """
+    Runs one representative instance for each goal bias and visualizes it.
+    """
+    MAP_DETAILS = {"json_file": "twoD/map_mp.json", "start": np.array([0.78, -0.78, 0.0, 0.0]), "goal": np.array([0.3, 0.15, 1.0, 1.1])}
+    planning_env = MapEnvironment(json_file=MAP_DETAILS["json_file"], task="mp")
+    bb = BuildingBlocks2D(planning_env)
+    
+    for bias in [0.05, 0.2]:
+        print(f"Running representative plan for bias {bias}...")
+        planner = RRTStarPlanner(bb=bb, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"], ext_mode="E2", goal_prob=bias, max_step_size=0.1, stop_on_goal=False)
+        plan, _ = planner.plan()
+        if len(plan) > 0:
+            Visualizer(bb).visualize_plan(plan=plan, start=MAP_DETAILS["start"], goal=MAP_DETAILS["goal"])
+
 if __name__ == "__main__":
     # dot_tree_figures_all()
     # run_dot_2d_astar()
@@ -389,26 +438,7 @@ if __name__ == "__main__":
     # run_dot_2d_rrt_star()
     # run_2d_rrt_motion_planning()
     # run_2d_rrt_inspection_planning()
-    #run_2d_rrt_star_motion_planning()
-    # res =dict()
-    # for p in [+0.2]:
-    #     for m in [0.05, 0.075, 0.1, 0.125, 0.2,0.25,0.3,0.4]:
-    #         for i in range(20):
-    #             print(f"{p=}, {m=} {i=}")
-    #             res[f"{p}_{m}_{i}"]=run_3d(m, p)
-    #
-    # with open("res") as f:
-    #     json.dump(res, f)
-    # dir = r"C:\Users\nblug\Documents\Technion\RoboticMotionPlaning\MotionPlaning3\exps\exp_pbias_0.2_max_step_size_0.075_2026-01-07_18-45-56"
-    # ur_params = UR5e_PARAMS(inflation_factor=1)
-    # env = Environment(env_idx=2)
-    # transform = Transform(ur_params)
-    #
-    # bb = BuildingBlocks3D(transform=transform,
-    #                       ur_params=ur_params,
-    #                       env=env,
-    #                       resolution=0.1)
-    # visualizer = Visualize_UR(ur_params, env=env, transform=transform, bb=bb)
-    # path = np.load(f"{dir}\path.npy")
-    # visualizer.show_path(path, gif_path="animation.gif")
-    plot_results()
+    # for i in [0.05, 0.20]:
+    #     run_2d_rrt_star_motion_planning(i)
+    plot_cost_vs_time_from_files()
+    visualize_representative_2d_final()

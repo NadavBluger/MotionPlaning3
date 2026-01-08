@@ -47,7 +47,11 @@ class RRTStarPlanner(object):
         itrs=0
         costs = []
         cost = math.inf
-        while itrs < self.max_itr:
+        start_time = time.time()
+        while time.time()-start_time < 120:
+            if self.tree.is_goal_exists(self.goal) and self.compute_cost(self.get_path()) < cost:
+                cost = self.compute_cost(self.get_path())
+                costs.append((time.time()-start_time, cost))
             goal_prob=0 if self.tree.is_goal_exists(self.goal) else self.goal_prob
             rand_config = self.bb.sample_random_config(goal_prob, self.goal)
             sid, nearest_config = self.tree.get_nearest_config(rand_config)
@@ -91,10 +95,10 @@ class RRTStarPlanner(object):
             #     cost = self.compute_cost(self.get_path())
             #     costs.append((itrs, cost))
             #     print(costs[-1])
-            if itrs%200==0:
-                cost =self.compute_cost(self.get_path())
-                costs.append((itrs, cost))
-                print(costs[-1])
+            if self.tree.is_goal_exists(self.goal) and self.compute_cost(self.get_path()) < cost:
+                cost = self.compute_cost(self.get_path())
+                costs.append((time.time()-start_time, cost))
+        print(len(self.tree.vertices))
         return self.get_path(), costs
 
     def get_path(self):
